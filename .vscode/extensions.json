@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    "Vue.volar",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "eamodio.gitlens",
+    "rangav.vscode-thunder-client",
+    "EditorConfig.EditorConfig",
+    "christian-kohler.npm-intellisense",
+    "christian-kohler.path-intellisense",
+    "hediet.vscode-drawio",
+    "shd101wyy.markdown-preview-enhanced"
+  ],
+  "unwantedRecommendations": ["octref.vetur"]
+}
