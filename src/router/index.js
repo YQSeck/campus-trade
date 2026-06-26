@@ -1,8 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router';
 
-// 汇总各模块路由（后续导入）
+// 导入各模块路由
+import productRoutes from './modules/product';
+
 const routes = [
-  // ... 各模块路由将在整合时添加
+  ...productRoutes,
+  // ... 其他模块路由由成员C整合时添加
 ];
 
 const router = createRouter({
