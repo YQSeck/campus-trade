@@ -3,15 +3,15 @@
 import request from '@/utils/request';
 
 // 注册
-// POST /api/auth/register  body: { email, password, nickname, school }
+// POST /api/auth/register  body: { email, password, nickname, school, phone? }
 // 响应: { message, userId }
 export function register(data) {
   return request.post('/auth/register', data);
 }
 
-// 登录
-// POST /api/auth/login  body: { email, password }
-// 响应: { token, user: { id, email, nickname, ... } }
+// 登录（支持邮箱或手机号）
+// POST /api/auth/login  body: { email, password }  (email 字段可传邮箱或手机号)
+// 响应: { token, user: { id, email, phone, nickname, ... } }
 export function login(data) {
   return request.post('/auth/login', data);
 }

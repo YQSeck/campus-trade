@@ -19,11 +19,11 @@
       label-position="top"
       @keyup.enter="handleLogin"
     >
-      <!-- 邮箱 -->
-      <el-form-item label="邮箱" prop="email">
+      <!-- 邮箱/手机号 -->
+      <el-form-item label="邮箱/手机号" prop="email">
         <el-input
           v-model="form.email"
-          placeholder="请输入邮箱地址"
+          placeholder="请输入邮箱或手机号"
           :prefix-icon="Message"
           size="large"
           clearable
@@ -95,15 +95,21 @@ const form = reactive({
   password: '',
 });
 
-// 校验规则
+// 校验规则：邮箱或11位手机号均合法
+const isEmailOrPhone = (rule, value, callback) => {
+  const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const isPhone = /^1[3-9]\d{9}$/.test(value);
+  if (!isEmail && !isPhone) {
+    callback(new Error('请输入正确的邮箱或11位手机号'));
+  } else {
+    callback();
+  }
+};
+
 const rules = {
   email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    {
-      type: 'email',
-      message: '请输入正确的邮箱格式',
-      trigger: ['blur', 'change'],
-    },
+    { required: true, message: '请输入邮箱或手机号', trigger: 'blur' },
+    { validator: isEmailOrPhone, trigger: ['blur', 'change'] },
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
@@ -141,7 +147,7 @@ async function handleLogin() {
     } else if (status === 403) {
       ElMessage.warning('账号已被锁定，请稍后再试');
     } else if (status === 401) {
-      ElMessage.error(msg || '邮箱或密码错误');
+      ElMessage.error(msg || '邮箱/手机号或密码错误');
     } else {
       ElMessage.error(msg || '登录失败，请稍后重试');
     }

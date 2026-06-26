@@ -23,10 +23,22 @@
       <el-form-item label="邮箱" prop="email">
         <el-input
           v-model="form.email"
-          placeholder="请输入邮箱地址"
+          placeholder="请输入邮箱地址（可与手机号二选一）"
           :prefix-icon="Message"
           size="large"
           clearable
+        />
+      </el-form-item>
+
+      <!-- 手机号 -->
+      <el-form-item label="手机号" prop="phone">
+        <el-input
+          v-model="form.phone"
+          placeholder="请输入手机号（可与邮箱二选一）"
+          :prefix-icon="Phone"
+          size="large"
+          clearable
+          maxlength="11"
         />
       </el-form-item>
 
@@ -100,7 +112,7 @@
 
 <script setup>
 import { ref, reactive, watch } from 'vue';
-import { Message, Lock, User, School } from '@element-plus/icons-vue';
+import { Message, Lock, User, School, Phone } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { register } from '@/api/auth';
 import { useUserStore } from '@/store/useUserStore';
@@ -117,6 +129,7 @@ watch(visible, (val) => { userStore.registerDialogVisible = val; });
 // 表单字段：与 API.md POST /api/auth/register 完全一致
 const form = reactive({
   email: '',
+  phone: '',
   nickname: '',
   school: '',
   password: '',
@@ -124,6 +137,15 @@ const form = reactive({
 });
 
 // 校验规则
+const validateEmailOrPhone = (rule, value, callback) => {
+  // email 和 phone 至少一个不为空（由 email 字段触发校验）
+  if (!form.email.trim() && !form.phone.trim()) {
+    callback(new Error('邮箱和手机号至少填写一项'));
+  } else {
+    callback();
+  }
+};
+
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== form.password) {
     callback(new Error('两次输入的密码不一致'));
@@ -134,8 +156,19 @@ const validateConfirmPassword = (rule, value, callback) => {
 
 const rules = {
   email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] },
+    { validator: validateEmailOrPhone, trigger: 'blur' },
+    {
+      pattern: /^$|^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: '请输入正确的邮箱格式',
+      trigger: ['blur', 'change'],
+    },
+  ],
+  phone: [
+    {
+      pattern: /^(1[3-9]\d{9})?$/,
+      message: '请输入正确的11位手机号',
+      trigger: ['blur', 'change'],
+    },
   ],
   nickname: [
     { required: true, message: '请输入昵称', trigger: 'blur' },
@@ -165,6 +198,7 @@ async function handleRegister() {
   try {
     await register({
       email: form.email,
+      phone: form.phone || undefined,
       password: form.password,
       nickname: form.nickname,
       school: form.school,

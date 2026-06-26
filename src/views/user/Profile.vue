@@ -38,7 +38,7 @@
               type="primary"
               plain
               :loading="avatarUploading"
-              @click="$refs.avatarInput.click()"
+              @click="avatarInput.click()"
             >
               {{ avatarUploading ? '处理中...' : '更换头像' }}
             </el-button>
@@ -55,9 +55,8 @@
           label-position="left"
           class="info-form"
         >
-          <el-form-item label="邮箱">
-            <el-input :model-value="userStore.user?.email" disabled />
-            <span class="form-tip">邮箱不可修改</span>
+          <el-form-item label="邮箱" prop="email">
+            <el-input v-model="form.email" placeholder="请输入邮箱地址" clearable />
           </el-form-item>
 
           <el-form-item label="昵称" prop="nickname">
@@ -66,6 +65,10 @@
 
           <el-form-item label="学校" prop="school">
             <el-input v-model="form.school" placeholder="请输入学校名称" clearable />
+          </el-form-item>
+
+          <el-form-item label="手机号" prop="phone">
+            <el-input v-model="form.phone" placeholder="请输入手机号（可选）" clearable />
           </el-form-item>
 
           <el-form-item label="联系方式" prop="contact">
@@ -154,8 +157,10 @@ const avatarUploading = ref(false);
 
 // 个人信息表单
 const form = reactive({
+  email: '',
   nickname: '',
   school: '',
+  phone: '',
   contact: '',
   avatarUrl: '',
 });
@@ -168,11 +173,25 @@ const pwdForm = reactive({
 });
 
 const rules = {
+  email: [
+    {
+      pattern: /^$|^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      message: '请输入正确的邮箱格式',
+      trigger: ['blur', 'change'],
+    },
+  ],
   nickname: [
     { required: true, message: '请输入昵称', trigger: 'blur' },
     { min: 2, max: 20, message: '昵称长度为2~20个字符', trigger: 'blur' },
   ],
   school: [{ required: true, message: '请输入学校名称', trigger: 'blur' }],
+  phone: [
+    {
+      pattern: /^(1[3-9]\d{9})?$/,
+      message: '请输入正确的11位手机号',
+      trigger: ['blur', 'change'],
+    },
+  ],
   contact: [
     {
       pattern: /^$|^1[3-9]\d{9}$|^[a-zA-Z0-9_-]+$/,
@@ -211,8 +230,10 @@ onMounted(() => {
   }
   const user = userStore.user;
   if (user) {
+    form.email = user.email || '';
     form.nickname = user.nickname || '';
     form.school = user.school || '';
+    form.phone = user.phone || '';
     form.contact = user.contact || '';
     form.avatarUrl = user.avatarUrl || '';
   }
@@ -236,7 +257,8 @@ async function handleAvatarChange(e) {
     const base64 = await compressImage(file, 2, 800);
     form.avatarUrl = base64;
 
-    // 即时更新 store（不等用户点保存）
+    // 先同步持久化到后端，再更新本地缓存
+    await updateProfile({ avatarUrl: base64 });
     userStore.updateProfile({ avatarUrl: base64 });
     ElMessage.success('头像已更新');
   } catch {
@@ -256,14 +278,18 @@ async function handleSave() {
   saving.value = true;
   try {
     await updateProfile({
+      email: form.email || undefined,
       nickname: form.nickname,
       school: form.school,
+      phone: form.phone || undefined,
       contact: form.contact,
       avatarUrl: form.avatarUrl,
     });
     userStore.updateProfile({
+      email: form.email || undefined,
       nickname: form.nickname,
       school: form.school,
+      phone: form.phone || undefined,
       contact: form.contact,
       avatarUrl: form.avatarUrl,
     });
@@ -279,8 +305,10 @@ async function handleSave() {
 function resetForm() {
   const user = userStore.user;
   if (user) {
+    form.email = user.email || '';
     form.nickname = user.nickname || '';
     form.school = user.school || '';
+    form.phone = user.phone || '';
     form.contact = user.contact || '';
     form.avatarUrl = user.avatarUrl || '';
   }

@@ -17,7 +17,7 @@ function hashPassword(password) {
 // 生成 JWT
 function generateToken(user) {
   return jwt.sign(
-    { id: user.id, email: user.email, role: user.role, nickname: user.nickname },
+    { id: user.id, email: user.email, role: user.role, nickname: user.nickname, phone: user.phone || '' },
     JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -48,6 +48,7 @@ const users = [
   {
     id: 1,
     email: 'admin@szu.edu.cn',
+    phone: '13800000000',
     password: hashPassword('admin123'),
     nickname: '管理员',
     school: '深圳大学',
@@ -62,29 +63,48 @@ const users = [
 
 // ======================== 注册 ========================
 router.post('/register', (req, res) => {
-  const { email, password, nickname, school } = req.body;
+  const { email, password, nickname, school, phone } = req.body;
 
-  if (!email || !password || !nickname || !school) {
-    return res.status(400).json({ message: '缺少必填字段：邮箱、昵称、学校、密码为必填项' });
+  // 邮箱和手机号至少填一个
+  if (!email && !phone) {
+    return res.status(400).json({ message: '邮箱和手机号至少填写一项' });
+  }
+  if (!password || !nickname || !school) {
+    return res.status(400).json({ message: '缺少必填字段：昵称、学校、密码为必填项' });
   }
   if (password.length < 6) {
     return res.status(400).json({ message: '密码长度不能少于6位' });
   }
-  // 邮箱格式校验
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!emailRegex.test(email)) {
-    return res.status(400).json({ message: '请输入正确的邮箱格式' });
+
+  // 邮箱格式校验（如有）
+  if (email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: '请输入正确的邮箱格式' });
+    }
+    const emailExists = users.find((u) => u.email === email);
+    if (emailExists) {
+      return res.status(409).json({ message: '该邮箱已被注册' });
+    }
   }
 
-  const exists = users.find((u) => u.email === email);
-  if (exists) {
-    return res.status(409).json({ message: '该邮箱已被注册' });
+  // 手机号格式校验（如有）
+  if (phone) {
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({ message: '请输入正确的手机号格式' });
+    }
+    const phoneExists = users.find((u) => u.phone === phone);
+    if (phoneExists) {
+      return res.status(409).json({ message: '该手机号已被注册' });
+    }
   }
 
   const newUser = {
     id: users.length + 1,
-    email,
-    password: hashPassword(password), // 密码加密存储
+    email: email || '',
+    phone: phone || '',
+    password: hashPassword(password),
     nickname,
     school,
     avatarUrl: '',
@@ -107,12 +127,16 @@ router.post('/login', (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    return res.status(400).json({ message: '请输入邮箱和密码' });
+    return res.status(400).json({ message: '请输入邮箱/手机号和密码' });
   }
 
-  const user = users.find((u) => u.email === email);
+  // 自动判断是邮箱还是手机号：含 @ 为邮箱，否则为手机号
+  const isEmail = email.includes('@');
+  const user = users.find((u) =>
+    isEmail ? u.email === email : u.phone === email
+  );
   if (!user) {
-    return res.status(401).json({ message: '邮箱或密码错误' });
+    return res.status(401).json({ message: '邮箱/手机号或密码错误' });
   }
 
   // 检查账号是否被冻结
@@ -134,7 +158,7 @@ router.post('/login', (req, res) => {
     }
     const remaining = MAX_LOGIN_ATTEMPTS - user.loginAttempts;
     return res.status(401).json({
-      message: `邮箱或密码错误，还剩 ${remaining} 次尝试机会`,
+      message: `邮箱/手机号或密码错误，还剩 ${remaining} 次尝试机会`,
     });
   }
 
@@ -149,6 +173,7 @@ router.post('/login', (req, res) => {
     user: {
       id: user.id,
       email: user.email,
+      phone: user.phone || '',
       nickname: user.nickname,
       school: user.school,
       avatarUrl: user.avatarUrl,
@@ -194,6 +219,7 @@ userRoutes.get('/profile', authMiddleware, (req, res) => {
     user: {
       id: user.id,
       email: user.email,
+      phone: user.phone || '',
       nickname: user.nickname,
       school: user.school,
       avatarUrl: user.avatarUrl,
@@ -211,16 +237,19 @@ userRoutes.put('/profile', authMiddleware, (req, res) => {
     return res.status(404).json({ message: '用户不存在' });
   }
 
-  const { nickname, school, avatarUrl, contact } = req.body;
+  const { nickname, school, avatarUrl, contact, phone, email } = req.body;
   if (nickname !== undefined) user.nickname = nickname;
   if (school !== undefined) user.school = school;
   if (avatarUrl !== undefined) user.avatarUrl = avatarUrl;
   if (contact !== undefined) user.contact = contact;
+  if (phone !== undefined) user.phone = phone;
+  if (email !== undefined) user.email = email;
 
   res.json({
     user: {
       id: user.id,
       email: user.email,
+      phone: user.phone || '',
       nickname: user.nickname,
       school: user.school,
       avatarUrl: user.avatarUrl,
