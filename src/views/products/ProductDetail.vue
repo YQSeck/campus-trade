@@ -1,4 +1,4 @@
-<!-- AI 生成，手动调整：商品详情+图片轮播+卖家信息+编辑入口，移除留言和「我想要」（属模块3） -->
+<!-- AI 合并版本：整合成员A的商品详情展示与成员B的留言功能 -->
 <template>
   <div class="detail-page">
     <header class="top-bar">
@@ -80,6 +80,25 @@
           </div>
         </div>
       </div>
+
+      <!-- 留言区域（成员B功能） -->
+      <div class="comments-section">
+        <h3>商品留言</h3>
+        <div v-for="c in comments" :key="c.id" class="comment-item">
+          <span class="user">{{ c.userNickname }}</span>：
+          <span>{{ c.content }}</span>
+          <span class="time">{{ new Date(c.createdAt).toLocaleString() }}</span>
+        </div>
+        <div v-if="!comments.length" class="no-comments">暂无留言</div>
+
+        <el-input
+          v-model="newComment"
+          placeholder="输入留言，按回车发送"
+          @keyup.enter="postComment"
+          clearable
+          style="margin-top:10px"
+        />
+      </div>
     </main>
 
     <div v-else class="loading-box">
@@ -90,13 +109,14 @@
 </template>
 
 <script setup>
-// AI 生成，手动调整：仅保留商品展示和卖家编辑入口，移除留言/我想要（属模块3职责）
+// AI 合并版本：整合成员A的商品展示与成员B的留言
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 import { ArrowLeft, UserFilled, Loading } from '@element-plus/icons-vue';
 import { useUserStore } from '@/store/useUserStore';
 import { getProductDetail } from '@/api/product';
+import { getComments, addComment } from '@/api/comments'; // 成员B的API
 
 const route = useRoute();
 const router = useRouter();
@@ -104,6 +124,8 @@ const userStore = useUserStore();
 
 const product = ref(null);
 const currentImageIndex = ref(0);
+const comments = ref([]);
+const newComment = ref('');
 
 function prevImage() {
   if (!product.value?.images) return;
@@ -144,12 +166,35 @@ function goEdit() {
   router.push(`/publish?edit=${product.value.id}`);
 }
 
+// ---------- 留言功能 ----------
+async function fetchComments() {
+  try {
+    const { data } = await getComments(route.params.id, { page: 1, limit: 50 });
+    comments.value = data.comments;
+  } catch (e) {
+    ElMessage.error('加载留言失败');
+  }
+}
+
+async function postComment() {
+  if (!newComment.value.trim()) return;
+  try {
+    await addComment(route.params.id, newComment.value.trim());
+    newComment.value = '';
+    fetchComments();
+  } catch (e) {
+    ElMessage.error('发送留言失败');
+  }
+}
+
 onMounted(() => {
   fetchDetail();
+  fetchComments();
 });
 </script>
 
 <style scoped>
+/* 原有详情页样式（成员A） */
 .detail-page { min-height: 100vh; background: var(--bg-color); }
 
 .top-bar {
@@ -227,4 +272,31 @@ onMounted(() => {
 .publish-time { font-size: 12px; color: var(--text-secondary); margin-top: 12px; }
 
 .loading-box { text-align: center; padding: 80px 0; color: var(--text-secondary); }
+
+/* 留言区域样式（成员B） */
+.comments-section {
+  margin-top: 30px;
+  padding: 20px;
+  background: #fff;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.comment-item {
+  padding: 8px 0;
+  border-bottom: 1px solid #eee;
+  line-height: 1.6;
+}
+.comment-item .user {
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.comment-item .time {
+  float: right;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.no-comments {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
 </style>
