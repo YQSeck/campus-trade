@@ -17,8 +17,12 @@ request.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/';
+      // 登录接口的 401 由调用方自行处理（密码错误等），不触发全局跳转
+      const isLoginRequest = error.config?.url?.includes('/auth/login');
+      if (!isLoginRequest) {
+        localStorage.removeItem('token');
+        window.location.href = '/';
+      }
     }
     return Promise.reject(error);
   }
