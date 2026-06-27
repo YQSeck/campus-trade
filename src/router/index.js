@@ -5,6 +5,13 @@ const routes = [
   // ... 各模块路由将在整合时添加
 ];
 
+import orderRoutes from './modules/orders';
+// ...
+const routes = [
+  // ...
+  ...orderRoutes,
+];
+
 const router = createRouter({
   history: createWebHistory(),
   routes,
