@@ -1,0 +1,16 @@
+/* AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼 */
+
+/* 鍏ㄥ眬鏍峰紡 - 浠呭湪姝ゆ枃浠朵腑浣跨敤鍏ㄥ眬閫夋嫨鍣紝缁勪欢鍐呭繀椤讳娇鐢?<style scoped> */
+
+/* 鍏ㄥ眬閲嶇疆 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* 鏍瑰竷灞€锛氱‘淇濋〉闈㈡渶灏忛珮搴﹁鐩栬鍙?*/
+html, body, #app {
+  height: 100%;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+}
