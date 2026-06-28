@@ -1,105 +1,107 @@
-# AGENTS.md - CampusTrade
+# AGENTS.md — CampusTrade
 
-## Stack (JS only, no TypeScript)
-- Frontend: Vue3 + Composition API (`<script setup>`), Element Plus, Pinia, Axios, Vite
-- Backend: Node.js + Express (RESTful API), CommonJS (`require`/`module.exports`)
-- DB: in-memory object in `server.js` (no persistence; reset on restart)
-- Auth: JWT (HS256, secret `campus-trade-secret-key`), frontend stores in `localStorage.getItem/setItem('token')`
+## Stack
+- **Frontend**: Vue3 + Composition API (`<script setup>`), Element Plus, Pinia, ECharts, Axios, Vite
+- **Backend**: Node.js + Express (RESTful API), CommonJS (`require`/`module.exports`)
+- **DB**: In-memory object in `server/db.js` (no persistence; reset on restart)
+- **Auth**: JWT (HS256, secret `campus-trade-secret-key`), frontend stores token in `localStorage.getItem/setItem('token')`
+- **Testing**: Node built-in test runner (`node --test`)
+- **JS only, no TypeScript**
 
 ## Commands
 
 | Command | What it does |
 |---------|-------------|
 | `npm run server` | Start Express backend on port 3000 |
-| `npm run dev` | Start Vite dev server (frontend) |
-| `npm run cli <subcommand>` | Run CLI admin tool (requires backend running) |
+| `npm run dev` | Start Vite dev server (frontend, proxies `/api` → `localhost:3000`) |
+| `npm run build` | Build frontend for production |
+| `npm run cli <subcommand>` | Run CLI admin tool (requires backend) |
+| `npm run test` | Run all tests |
+| `npm run test:skill` | Run only skill pricing tests |
+| `npm run test:cli` | Run only CLI tests |
+| `npm run lint` | ESLint `.js,.vue` in `src/` |
+| `npm run format` | Prettier `src/` |
 
-**Important**: Frontend deps (`vue`, `vite`, `pinia`, `element-plus`) are **not** in `package.json` yet. `npm run dev` and the frontend will fail until those are installed and a `vite.config.js` + `index.html` are added.
-
-No `lint`/`test`/`format` scripts configured.
+**Command order**: start backend first (`npm run server`), then frontend (`npm run dev`).
 
 ## Architecture
 
 ### Frontend (`src/`)
-- Module system: ES modules (`import`/`export`)
-- `src/main.js` 鈥?entrypoint; registers Pinia 鈫?Router 鈫?ElementPlus
-- `src/router/index.js` 鈥?routes auto-loaded from `src/router/modules/*.js` via `import.meta.glob`; never edit the routes array directly
-- `src/store/userStore.js` 鈥?token persisted to localStorage, `userInfo` is memory-only; `isAdmin` checks `userInfo.role === 'admin'`
-- `src/utils/request.js` 鈥?pre-configured Axios instance (`baseURL: '/api'`, auth interceptor); **always use this** for frontend API calls
+- ES modules (`import`/`export`)
+- `src/main.js` → register Pinia → Router → ElementPlus
+- `src/router/index.js` — routes auto-loaded from `src/router/modules/*.js` via `import.meta.glob` (eager); **never edit the routes array directly**
+- `src/store/userStore.js` — token persisted to localStorage, `userInfo` memory-only; `isAdmin` checks `role === 'admin'`
+- `src/utils/request.js` — pre-configured Axios (`baseURL: '/api'`, auth interceptor); **always use this** for frontend API calls
+- `src/utils/image.js` — client-side image compression (canvas → base64)
+- `src/utils/account.js` — email/phone normalization and validation
+- `src/constants/categories.js` — `PRODUCT_CATEGORIES` array (5 categories)
 
-### Backend (`server.js` + `src/skills/`)
-- Module system: CommonJS (`require`/`module.exports`) 鈥?`package.json` has `"type": "commonjs"`
-- Single-file Express server at `server.js` 鈥?all routes, middleware, and in-memory DB in one file
-- JWT middleware: `authMiddleware` 鈫?populates `req.user`; `adminMiddleware` 鈫?checks `req.user.role === 'admin'`
-- Skill system: Express Routers under `src/skills/` mounted at `/api/skills/` on the server
+### Backend (`server/`)
+- CommonJS (`require`/`module.exports`); `package.json` has `"type": "commonjs"`
+- Entrypoint: `server/index.js` (redirected from root `server.js`)
+- Routes are **not** single-file — they live in `server/routes/` split by domain
+- `server/db.js` — in-memory DB object + `genId()` helper; **all data lost on restart**
+- `server/data.js` — thin re-export shim of `db.js`
+- `server/middleware.js` — `hashPassword` (SHA-256, no salt), `generateToken`, `authMiddleware`, `adminMiddleware`, `mockSendEmail`
 - Test accounts: `admin@campus.edu`/`admin123`, `user@campus.edu`/`user123`
+
+### Route mounting order (in `server/index.js`)
+| Order | Mount path | Source | Purpose |
+|-------|-----------|--------|---------|
+| 1 | `/api/auth` | `routes/auth` (authRouter) | Register, login, forgot-password |
+| 2 | `/api/user` | `routes/auth` (userRouter) | Profile, change password |
+| 3 | `/api/upload` | `routes/auth` (uploadRouter) | Mock avatar upload |
+| 4 | `/api/products` | `routes/comments` | Product comments — **must mount before products** |
+| 5 | `/api/products` | `routes/products` | Product CRUD |
+| 6 | `/api/orders` | `routes/orders` | Order lifecycle |
+| 7 | `/api/orders` | `routes/reviews` | Order reviews |
+| 8 | `/api/users` | `routes/users` | User reputation, ban, list |
+| 9 | `/api/reports` | `routes/reports` | Submit reports |
+| 10 | `/api/admin` | `routes/admin` | Admin stats, product/user/report/review management |
+| 11 | `/api/skills` | `../src/skills/pricingRoutes` | Pricing recommendation skill |
 
 ### CLI (`cli/`)
 - Entrypoint: `cli/tradeCli.js` using `commander` + `chalk`
-- Uses its own Axios client (`cli/apiClient.js`), **not** `src/utils/request.js`
-- CLI auth: `TRADE_TOKEN` env var 鈫?`~/.trade-cli/config.json` 鈫?`--token` flag
-- Requires backend running at `http://localhost:3000` (overridable via `TRADE_API_URL`)
+- Uses own Axios client (`cli/apiClient.js`), **not** `src/utils/request.js`
+- Token priority: `TRADE_TOKEN` env var → `~/.trade-cli/config.json` → `--token` flag
+- Auth for CLI: `curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@campus.edu","password":"admin123"}'`
 
-## Dev workflow
-1. Start backend first: `npm run server`
-2. Start frontend (once deps exist): `npm run dev`
-3. CLI commands: `node cli/tradeCli.js --token <jwt> <subcommand>`
-
-To get a JWT for CLI use: `curl -X POST http://localhost:3000/api/auth/login -H "Content-Type: application/json" -d '{"email":"admin@campus.edu","password":"admin123"}'`
-
-## Current state (what's missing)
-- **`views/` and `components/` are empty** 鈥?no Vue pages or components exist yet
-- **`router/modules/` directory does not exist** 鈥?no routes registered, frontend has nothing to render
-- **No `index.html`** or **`vite.config.js`** 鈥?Vite can't start
-- **Frontend deps missing** from `package.json`: `vue`, `vite`, `@vitejs/plugin-vue`, `pinia`, `element-plus`
-- **Backend has limited endpoints**: login, profile, GET products (list only), GET orders (list only), ban/unban users, admin stats, + skill endpoints. No POST/PUT/DELETE for products, no registration, no order creation.
+### Testing
+- Node built-in test runner (`node --test`), **not** Jest/Vitest/Mocha
+- Tests live in `tests/module7-cli/` and `tests/module8-skill/`
+- CLI integration tests may require the backend running (check individual test files)
 
 ## Conventions
 
-### Naming & formatting
-- Vue files: PascalCase (`LoginPage.vue`)
-- JS files: camelCase (`apiClient.js`)
-- Indent: 2 spaces (no tabs)
-- Quotes: single quotes
+### Code style (enforced by ESLint + Prettier)
+- Indent: 2 spaces, no tabs
+- Quotes: single
 - Semicolons: required
+- Trailing commas: es5
+- Print width: 100
+
+### Files
+- **Every new file** must start with: `// AI 生成：手动调整前请勿修改`
+- Vue files: PascalCase (`LoginDialog.vue`)
+- JS files: camelCase (`apiClient.js`)
 - Fields: camelCase (`productId`, `createdAt`)
 - Dates: ISO 8601 (`2026-06-25T10:30:00.000Z`)
-- **Every new file** must start with: `// AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼`
 
-### Component structure (strict order)
-```
-<template> 鈫?<script setup> 鈫?<style scoped>
-```
-
-### Styling
-- Always use `<style scoped>` in components
-- Global selectors only in `src/styles/global.css`
+### Vue components
+- Strict order: `<template>` → `<script setup>` → `<style scoped>`
+- Always use `<style scoped>`; global selectors only in `src/styles/global.css`
 
 ### Pagination
 - Request: `{ page: 1, limit: 10 }` (page starts at 1)
-- Response: `{ <plural>: [], total, page, limit }` 鈥?key is semantic: `products`, `orders`, `users`
+- Response: `{ <plural>: [], total, page, limit }` — key is semantic: `products`, `orders`, `users`
 
 ### Skills (`src/skills/`)
 - Each skill is an Express `Router` exported via `module.exports`
-- Mount in `server.js` with `app.use('/api/skills', router)`
-- Data/logic split: `pricingData.js` for constants, `pricing.js` for engine, `pricingRoutes.js` for router
+- Mounted at `/api/skills/` in `server/index.js`
+- Convention: `pricingData.js` (constants) → `pricing.js` (engine) → `pricingRoutes.js` (router)
 
-## Directory
-```
-server.js               鈥?Express backend (single file with all routes + in-memory DB)
-cli/                    鈥?Commander-based CLI admin tool
-  tradeCli.js           鈥?Entrypoint
-  apiClient.js          鈥?CLI HTTP client (separate from frontend request.js)
-  commands/             鈥?Subcommands (products, orders, users)
-src/
-  api/                  鈥?Frontend API modules (auth.js, products.js)
-  views/                鈥?Page-level Vue components (empty)
-  components/           鈥?Reusable Vue components (empty)
-  store/                鈥?Pinia stores (userStore.js)
-  router/               鈥?router/index.js + modules/*.js (modules/ does not exist yet)
-  utils/                鈥?Frontend Axios instance (request.js)
-  styles/               鈥?Global CSS only (global.css)
-  skills/               鈥?Server-side skill modules (CommonJS)
-  App.vue, main.js      鈥?Vue entrypoints
-docs/                   鈥?API docs (skillPricing.md)
-```
+### Auth flow
+- `authMiddleware` extracts `Authorization: Bearer <token>`, populates `req.user`
+- `adminMiddleware` checks `req.user.role === 'admin'`
+- Login lockout: 5 attempts → 15 min freeze (`lockedUntil`)
+- Password: SHA-256 via `crypto.createHash` (no salt, not bcrypt)
