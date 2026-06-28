@@ -82,8 +82,11 @@
 
 ## 开放 Skill（模块8）
 ### POST /api/skills/recommend
-- 请求体: `{ userId, limit }`
-- 响应: `{ recommendations: [{ id, title, price, ... }] }`
+- 请求体: `{ category, condition, originalPrice?, marketPrices? }`
+- 响应: `{ success, suggestedPrice, priceRange: { min, max }, confidence, reasoning, breakdown }`
+
+### GET /api/skills/recommend/meta
+- 响应: `{ categories, conditions, baseRates, conditionFactors }`
 
 ## 上传
 ### POST /api/upload

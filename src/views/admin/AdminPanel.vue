@@ -150,6 +150,34 @@
         </el-table-column>
       </el-table>
     </el-card>
+
+    <!-- 评价管理 -->
+    <el-card class="table-card">
+      <template #header>
+        <span>评价管理</span>
+      </template>
+      <el-table :data="reviewList" stripe>
+        <el-table-column prop="id" label="ID" width="60" />
+        <el-table-column prop="reviewerNickname" label="评价人" width="100" />
+        <el-table-column prop="orderTitle" label="关联订单" />
+        <el-table-column prop="rating" label="星级" width="80">
+          <template #default="{ row }">
+            <el-rate :model-value="row.rating" disabled size="small" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="content" label="评价内容" />
+        <el-table-column prop="createdAt" label="时间" width="170" />
+        <el-table-column label="操作" width="100">
+          <template #default="{ row }">
+            <el-button
+              size="small"
+              type="danger"
+              @click="deleteReview(row)"
+            >删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
   </div>
   <div v-else class="unauthorized">
     <el-result
@@ -175,6 +203,8 @@ import {
   getReports,
   resolveReportApi,
   dismissReportApi,
+  getAdminReviews,
+  deleteReviewApi,
 } from "@/api/admin";
 import * as echarts from "echarts";
 
@@ -295,12 +325,24 @@ const dismissReport = async (row) => {
   row.status = "dismissed";
 };
 
+// 评价管理
+const reviewList = ref([]);
+const fetchReviews = async () => {
+  const { data } = await getAdminReviews();
+  reviewList.value = data.reviews;
+};
+const deleteReview = async (row) => {
+  await deleteReviewApi(row.id);
+  fetchReviews();
+};
+
 onMounted(() => {
   if (isAdmin) {
     fetchStats();
     fetchProducts();
     fetchUsers();
     fetchReports();
+    fetchReviews();
   }
 });
 
