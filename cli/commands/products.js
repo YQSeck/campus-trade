@@ -1,3 +1,5 @@
+// 【模块七：CLI】商品列表与搜索命令
+// AI 生成：手动调整前请勿修改
 // AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
 const chalk = require('chalk');
 const apiClient = require('../apiClient');

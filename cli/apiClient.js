@@ -1,3 +1,5 @@
+// 【模块七：CLI】HTTP 客户端与 Token 管理
+// AI 生成：手动调整前请勿修改
 // AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
 const axios = require('axios');
 const fs = require('fs');

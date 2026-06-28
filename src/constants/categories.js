@@ -1,2 +1,3 @@
-// AI 生成，手动调整：统一分类枚举，避免多处硬编码
-export const PRODUCT_CATEGORIES = ['书籍', '电子产品', '生活用品'];
+// 【模块二：商品发布与管理】商品分类常量
+// AI 生成：手动调整前请勿修改
+export const PRODUCT_CATEGORIES = ["书籍", "电子产品", "生活用品"];

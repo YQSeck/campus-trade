@@ -1,4 +1,5 @@
-<!-- AI 生成，手动调整：管理员面板，包含统计、商品审核、用户管理、举报处理 -->
+<!-- 【模块五：后台管理】管理员面板 -->
+<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="admin-panel" v-if="isAdmin">
     <h2>管理员控制台</h2>
@@ -31,16 +32,22 @@
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
             <el-tag :type="row.status === 'active' ? 'success' : 'info'">
-              {{ row.status === 'active' ? '在售' : '下架' }}
+              {{ row.status === "active" ? "在售" : "下架" }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="260">
           <template #default="{ row }">
-            <el-button size="small" @click="toggleProductStatus(row)" :type="row.status==='active'?'warning':'success'">
-              {{ row.status === 'active' ? '下架' : '上架' }}
+            <el-button
+              size="small"
+              @click="toggleProductStatus(row)"
+              :type="row.status === 'active' ? 'warning' : 'success'"
+            >
+              {{ row.status === "active" ? "下架" : "上架" }}
             </el-button>
-            <el-button size="small" type="danger" @click="deleteProduct(row.id)">删除</el-button>
+            <el-button size="small" type="danger" @click="deleteProduct(row.id)"
+              >删除</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -66,15 +73,27 @@
         <el-table-column prop="lockedUntil" label="封禁状态" width="120">
           <template #default="{ row }">
             <el-tag :type="row.lockedUntil ? 'danger' : 'success'">
-              {{ row.lockedUntil ? '封禁中' : '正常' }}
+              {{ row.lockedUntil ? "封禁中" : "正常" }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="260">
           <template #default="{ row }">
-            <el-button size="small" @click="banUser(row)" :disabled="row.role==='admin'">封禁</el-button>
-            <el-button size="small" @click="unbanUser(row)" :disabled="!row.lockedUntil">解封</el-button>
-            <el-button size="small" @click="resetPassword(row)">重置密码</el-button>
+            <el-button
+              size="small"
+              @click="banUser(row)"
+              :disabled="row.role === 'admin'"
+              >封禁</el-button
+            >
+            <el-button
+              size="small"
+              @click="unbanUser(row)"
+              :disabled="!row.lockedUntil"
+              >解封</el-button
+            >
+            <el-button size="small" @click="resetPassword(row)"
+              >重置密码</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -99,16 +118,32 @@
         <el-table-column prop="targetId" label="对象ID" width="80" />
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'pending' ? 'warning' : row.status === 'resolved' ? 'success' : 'info'">
+            <el-tag
+              :type="
+                row.status === 'pending'
+                  ? 'warning'
+                  : row.status === 'resolved'
+                    ? 'success'
+                    : 'info'
+              "
+            >
               {{ statusMap[row.status] }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" v-if="reportList.some(r=>r.status==='pending')">
+        <el-table-column
+          label="操作"
+          width="200"
+          v-if="reportList.some((r) => r.status === 'pending')"
+        >
           <template #default="{ row }">
             <template v-if="row.status === 'pending'">
-              <el-button size="small" type="success" @click="resolveReport(row)">已处理</el-button>
-              <el-button size="small" type="danger" @click="dismissReport(row)">驳回</el-button>
+              <el-button size="small" type="success" @click="resolveReport(row)"
+                >已处理</el-button
+              >
+              <el-button size="small" type="danger" @click="dismissReport(row)"
+                >驳回</el-button
+              >
             </template>
             <span v-else>已处理</span>
           </template>
@@ -117,27 +152,42 @@
     </el-card>
   </div>
   <div v-else class="unauthorized">
-    <el-result icon="warning" title="无权限访问" sub-title="请使用管理员账号登录" />
+    <el-result
+      icon="warning"
+      title="无权限访问"
+      sub-title="请使用管理员账号登录"
+    />
   </div>
 </template>
 
 <script setup>
-// AI 生成，手动调整：管理员面板逻辑
-import { ref, onMounted, watch, nextTick } from 'vue';
-import request from '@/utils/request';
-import { getAdminStats, getAdminProducts, updateProduct, deleteProduct, getAdminUsers, banUserApi, unbanUserApi, resetPasswordApi, getReports, resolveReportApi, dismissReportApi } from '@/api/admin';
-import * as echarts from 'echarts';
+import { ref, onMounted, watch, nextTick } from "vue";
+import request from "@/utils/request";
+import {
+  getAdminStats,
+  getAdminProducts,
+  updateProduct,
+  deleteProduct,
+  getAdminUsers,
+  banUserApi,
+  unbanUserApi,
+  resetPasswordApi,
+  getReports,
+  resolveReportApi,
+  dismissReportApi,
+} from "@/api/admin";
+import * as echarts from "echarts";
 
 // 权限判断：从 localStorage 获取用户信息
-const user = JSON.parse(localStorage.getItem('user') || '{}');
-const isAdmin = user.role === 'admin';
+const user = JSON.parse(localStorage.getItem("user") || "{}");
+const isAdmin = user.role === "admin";
 
 // 统计数据
 const stats = ref([
-  { label: '商品总数', value: 0 },
-  { label: '订单总数', value: 0 },
-  { label: '用户总数', value: 0 },
-  { label: '本周交易额(¥)', value: 0 },
+  { label: "商品总数", value: 0 },
+  { label: "订单总数", value: 0 },
+  { label: "用户总数", value: 0 },
+  { label: "本周交易额(¥)", value: 0 },
 ]);
 
 // 图表
@@ -152,7 +202,11 @@ const userTotal = ref(0);
 const reportList = ref([]);
 const reportTotal = ref(0);
 
-const statusMap = { pending: '待处理', resolved: '已处理', dismissed: '已驳回' };
+const statusMap = {
+  pending: "待处理",
+  resolved: "已处理",
+  dismissed: "已驳回",
+};
 
 // 获取统计数据
 const fetchStats = async () => {
@@ -164,7 +218,7 @@ const fetchStats = async () => {
     stats.value[3].value = data.weeklyVolume;
     renderChart(data.dailyVolume);
   } catch (e) {
-    console.error('获取统计失败', e);
+    console.error("获取统计失败", e);
   }
 };
 
@@ -174,10 +228,12 @@ const renderChart = (dailyVolume) => {
   if (chartInstance) chartInstance.dispose();
   chartInstance = echarts.init(chartRef.value);
   chartInstance.setOption({
-    tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: dailyVolume.map((d) => d.date) },
-    yAxis: { type: 'value' },
-    series: [{ data: dailyVolume.map((d) => d.volume), type: 'line', smooth: true }],
+    tooltip: { trigger: "axis" },
+    xAxis: { type: "category", data: dailyVolume.map((d) => d.date) },
+    yAxis: { type: "value" },
+    series: [
+      { data: dailyVolume.map((d) => d.volume), type: "line", smooth: true },
+    ],
   });
 };
 
@@ -190,12 +246,12 @@ const fetchProducts = async (page = 1) => {
 
 // 商品状态切换
 const toggleProductStatus = async (row) => {
-  const newStatus = row.status === 'active' ? 'removed' : 'active';
+  const newStatus = row.status === "active" ? "removed" : "active";
   try {
     await updateProduct(row.id, { status: newStatus });
     row.status = newStatus;
   } catch (e) {
-    console.error('操作失败', e);
+    console.error("操作失败", e);
   }
 };
 
@@ -213,7 +269,7 @@ const fetchUsers = async (page = 1) => {
 };
 const banUser = async (user) => {
   await banUserApi(user.id);
-  user.lockedUntil = '已封禁'; // 模拟
+  user.lockedUntil = "已封禁"; // 模拟
 };
 const unbanUser = async (user) => {
   await unbanUserApi(user.id);
@@ -221,7 +277,7 @@ const unbanUser = async (user) => {
 };
 const resetPassword = async (user) => {
   await resetPasswordApi(user.id);
-  alert('密码已重置为默认');
+  alert("密码已重置为默认");
 };
 
 // 举报处理
@@ -232,11 +288,11 @@ const fetchReports = async (page = 1) => {
 };
 const resolveReport = async (row) => {
   await resolveReportApi(row.id);
-  row.status = 'resolved';
+  row.status = "resolved";
 };
 const dismissReport = async (row) => {
   await dismissReportApi(row.id);
-  row.status = 'dismissed';
+  row.status = "dismissed";
 };
 
 onMounted(() => {
@@ -249,7 +305,7 @@ onMounted(() => {
 });
 
 // 响应式图表大小
-window.addEventListener('resize', () => chartInstance?.resize());
+window.addEventListener("resize", () => chartInstance?.resize());
 </script>
 
 <style scoped>

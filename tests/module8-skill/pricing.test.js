@@ -1,3 +1,5 @@
+// 【模块八：开放 Skill】定价引擎单元测试
+// AI 生成：手动调整前请勿修改
 // AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
 var { describe, it } = require('node:test');
 var assert = require('node:assert/strict');

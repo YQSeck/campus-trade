@@ -1,81 +1,13 @@
-// 初始数据仅用于本地调试，最终需替换为数据库
-
-const users = [
-  {
-    id: 1,
-    email: 'admin@campus.com',
-    password: 'admin123', // 实际需加密
-    nickname: '管理员',
-    school: 'XX大学',
-    avatarUrl: '',
-    contact: '',
-    role: 'admin',
-    reputationScore: 100,
-    lockedUntil: null
-  },
-  {
-    id: 2,
-    email: 'seller@campus.com',
-    password: '123456',
-    nickname: '卖家张三',
-    school: 'XX大学',
-    avatarUrl: '',
-    contact: '',
-    role: 'user',
-    reputationScore: 90,
-    lockedUntil: null
-  },
-  {
-    id: 3,
-    email: 'buyer@campus.com',
-    password: '123456',
-    nickname: '买家李四',
-    school: 'XX大学',
-    avatarUrl: '',
-    contact: '',
-    role: 'user',
-    reputationScore: 80,
-    lockedUntil: null
-  }
-];
-
-const products = [
-  {
-    id: 1,
-    title: '二手笔记本',
-    description: '九成新，考研结束出',
-    category: '电子产品',
-    price: 1500,
-    originalPrice: 4500,
-    condition: 9,
-    images: ['/uploads/laptop.jpg'],
-    sellerId: 2,
-    sellerNickname: '卖家张三',
-    sellerSchool: 'XX大学',
-    status: 'active',
-    createdAt: '2026-06-20T08:00:00.000Z'
-  }
-];
-
-const orders = [];
-const comments = []; 
-const reviews = []; 
-
-let nextId = {
-  order: 1,
-  comment: 1,
-  review: 1
-};
-
-function genId(type) {
-  return nextId[type]++;
-}
+// 【公共基础】数据层兼容导出（指向 db.js）
+// AI 生成：手动调整前请勿修改
+// 兼容旧引用，实际数据来自 server/db.js
+const { db, genId } = require('./db');
 
 module.exports = {
-  users,
-  products,
-  orders,
-  comments,
-  reviews,
-  genId
+  users: db.users,
+  products: db.products,
+  orders: db.orders,
+  comments: db.comments,
+  reviews: db.reviews,
+  genId,
 };

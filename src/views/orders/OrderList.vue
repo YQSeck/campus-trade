@@ -1,3 +1,5 @@
+<!-- 【模块三：交易与订单】订单列表 -->
+<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="order-list-page">
     <h2>我的订单</h2>
@@ -13,11 +15,15 @@
       </el-table-column>
       <el-table-column prop="status" label="状态" width="100">
         <template #default="{ row }">
-          <el-tag :type="statusTag(row.status)">{{ statusText(row.status) }}</el-tag>
+          <el-tag :type="statusTag(row.status)">{{
+            statusText(row.status)
+          }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="createdAt" label="时间" width="180">
-        <template #default="{ row }">{{ new Date(row.createdAt).toLocaleString() }}</template>
+        <template #default="{ row }">{{
+          new Date(row.createdAt).toLocaleString()
+        }}</template>
       </el-table-column>
       <el-table-column label="操作" width="180">
         <template #default="{ row }">
@@ -27,25 +33,29 @@
             type="primary"
             size="small"
             @click="handlePay(row)"
-          >付款</el-button>
+            >付款</el-button
+          >
           <el-button
             v-if="activeRole === 'seller' && row.status === 'paid'"
             type="success"
             size="small"
             @click="handleShip(row)"
-          >发货</el-button>
+            >发货</el-button
+          >
           <el-button
             v-if="activeRole === 'buyer' && row.status === 'shipped'"
             type="success"
             size="small"
             @click="handleReceive(row)"
-          >确认收货</el-button>
+            >确认收货</el-button
+          >
           <el-button
             v-if="['pending', 'paid'].includes(row.status)"
             type="danger"
             size="small"
             @click="handleCancel(row)"
-          >取消</el-button>
+            >取消</el-button
+          >
         </template>
       </el-table-column>
     </el-table>
@@ -61,13 +71,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { getOrderList, updateOrderStatus, payOrder } from '@/api/orders';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { getOrderList, updateOrderStatus, payOrder } from "@/api/orders";
+import { ElMessage, ElMessageBox } from "element-plus";
 
 const router = useRouter();
-const activeRole = ref('buyer');
+const activeRole = ref("buyer");
 const orders = ref([]);
 const loading = ref(false);
 const currentPage = ref(1);
@@ -75,22 +85,28 @@ const pageSize = ref(10);
 const total = ref(0);
 
 const statusMap = {
-  pending: '待付款',
-  paid: '待发货',
-  shipped: '待收货',
-  received: '已完成',
-  cancelled: '已取消'
+  pending: "待付款",
+  paid: "待发货",
+  shipped: "待收货",
+  received: "已完成",
+  completed: "已完成",
+  cancelled: "已取消",
 };
 const statusTagType = {
-  pending: 'warning',
-  paid: 'info',
-  shipped: '',
-  received: 'success',
-  cancelled: 'danger'
+  pending: "warning",
+  paid: "info",
+  shipped: "",
+  received: "success",
+  completed: "success",
+  cancelled: "danger",
 };
 
-function statusText(status) { return statusMap[status] || status; }
-function statusTag(status) { return statusTagType[status] || ''; }
+function statusText(status) {
+  return statusMap[status] || status;
+}
+function statusTag(status) {
+  return statusTagType[status] || "";
+}
 
 async function fetchOrders() {
   loading.value = true;
@@ -98,12 +114,12 @@ async function fetchOrders() {
     const { data } = await getOrderList({
       role: activeRole.value,
       page: currentPage.value,
-      limit: pageSize.value
+      limit: pageSize.value,
     });
     orders.value = data.orders;
     total.value = data.total;
   } catch (e) {
-    ElMessage.error('加载订单失败');
+    ElMessage.error("加载订单失败");
   } finally {
     loading.value = false;
   }
@@ -115,43 +131,43 @@ function handleDetail(order) {
 
 async function handlePay(order) {
   try {
-    await ElMessageBox.confirm(`确认支付 ¥${order.price}？`, '模拟支付');
+    await ElMessageBox.confirm(`确认支付 ¥${order.price}？`, "模拟支付");
     await payOrder(order.id);
-    ElMessage.success('支付成功');
+    ElMessage.success("支付成功");
     fetchOrders();
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('支付失败');
+    if (e !== "cancel") ElMessage.error("支付失败");
   }
 }
 
 async function handleShip(order) {
   try {
-    await updateOrderStatus(order.id, 'shipped');
-    ElMessage.success('已标记发货');
+    await updateOrderStatus(order.id, "shipped");
+    ElMessage.success("已标记发货");
     fetchOrders();
   } catch (e) {
-    ElMessage.error('操作失败');
+    ElMessage.error("操作失败");
   }
 }
 
 async function handleReceive(order) {
   try {
-    await updateOrderStatus(order.id, 'received');
-    ElMessage.success('已确认收货，交易完成');
+    await updateOrderStatus(order.id, "received");
+    ElMessage.success("已确认收货，交易完成");
     fetchOrders();
   } catch (e) {
-    ElMessage.error('操作失败');
+    ElMessage.error("操作失败");
   }
 }
 
 async function handleCancel(order) {
   try {
-    await ElMessageBox.confirm('确定取消订单？', '提示');
-    await updateOrderStatus(order.id, 'cancelled');
-    ElMessage.success('订单已取消');
+    await ElMessageBox.confirm("确定取消订单？", "提示");
+    await updateOrderStatus(order.id, "cancelled");
+    ElMessage.success("订单已取消");
     fetchOrders();
   } catch (e) {
-    if (e !== 'cancel') ElMessage.error('取消失败');
+    if (e !== "cancel") ElMessage.error("取消失败");
   }
 }
 

@@ -1,4 +1,5 @@
-<!-- AI 生成，手动调整：本地图片压缩上传、即时更新store、返回首页按钮 -->
+<!-- 【模块一/四】个人中心（含信誉分展示） -->
+<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="profile-page">
     <header class="top-bar">
@@ -11,7 +12,9 @@
         </div>
         <div class="top-actions">
           <span class="welcome-text">你好，{{ userStore.user?.nickname }}</span>
-          <el-button type="danger" size="small" plain @click="handleLogout">退出登录</el-button>
+          <el-button type="danger" size="small" plain @click="handleLogout"
+            >退出登录</el-button
+          >
         </div>
       </div>
     </header>
@@ -40,7 +43,7 @@
               :loading="avatarUploading"
               @click="avatarInput.click()"
             >
-              {{ avatarUploading ? '处理中...' : '更换头像' }}
+              {{ avatarUploading ? "处理中..." : "更换头像" }}
             </el-button>
             <p class="upload-tip">支持 JPG/PNG/GIF，自动压缩至 2MB 以内</p>
           </div>
@@ -56,32 +59,62 @@
           class="info-form"
         >
           <el-form-item label="邮箱" prop="email">
-            <el-input v-model="form.email" placeholder="请输入邮箱地址" clearable />
+            <el-input
+              v-model="form.email"
+              placeholder="请输入邮箱地址"
+              clearable
+            />
           </el-form-item>
 
           <el-form-item label="昵称" prop="nickname">
-            <el-input v-model="form.nickname" placeholder="给自己起个名字" clearable />
+            <el-input
+              v-model="form.nickname"
+              placeholder="给自己起个名字"
+              clearable
+            />
           </el-form-item>
 
           <el-form-item label="学校" prop="school">
-            <el-input v-model="form.school" placeholder="请输入学校名称" clearable />
+            <el-input
+              v-model="form.school"
+              placeholder="请输入学校名称"
+              clearable
+            />
           </el-form-item>
 
           <el-form-item label="手机号" prop="phone">
-            <el-input v-model="form.phone" placeholder="请输入手机号（可选）" clearable />
+            <el-input
+              v-model="form.phone"
+              placeholder="请输入手机号（可选）"
+              clearable
+            />
           </el-form-item>
 
           <el-form-item label="联系方式" prop="contact">
-            <el-input v-model="form.contact" placeholder="手机号或微信号（可选）" clearable />
+            <el-input
+              v-model="form.contact"
+              placeholder="手机号或微信号（可选）"
+              clearable
+            />
+          </el-form-item>
+
+          <el-form-item label="公开联系方式">
+            <el-switch
+              v-model="form.contactVisible"
+              active-text="公开"
+              inactive-text="隐藏"
+            />
           </el-form-item>
 
           <el-form-item label="信誉分">
-            <span class="reputation-score">{{ userStore.user?.reputationScore || 100 }} 分</span>
+            <span class="reputation-score"
+              >{{ userStore.user?.reputationScore || 100 }} 分</span
+            >
           </el-form-item>
 
           <el-form-item>
             <el-button type="primary" :loading="saving" @click="handleSave">
-              {{ saving ? '保存中...' : '保存修改' }}
+              {{ saving ? "保存中..." : "保存修改" }}
             </el-button>
             <el-button @click="resetForm">取消</el-button>
           </el-form-item>
@@ -127,8 +160,12 @@
           </el-form-item>
 
           <el-form-item>
-            <el-button type="warning" :loading="changingPwd" @click="handleChangePassword">
-              {{ changingPwd ? '修改中...' : '修改密码' }}
+            <el-button
+              type="warning"
+              :loading="changingPwd"
+              @click="handleChangePassword"
+            >
+              {{ changingPwd ? "修改中..." : "修改密码" }}
             </el-button>
           </el-form-item>
         </el-form>
@@ -138,13 +175,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { ArrowLeft, UserFilled } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { useUserStore } from '@/store/useUserStore';
-import { updateProfile, changePassword } from '@/api/auth';
-import { compressImage } from '@/utils/image';
+import { ref, reactive, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { ArrowLeft, UserFilled } from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { useUserStore } from "@/store/useUserStore";
+import { updateProfile, changePassword } from "@/api/auth";
+import { compressImage } from "@/utils/image";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -157,85 +194,93 @@ const avatarUploading = ref(false);
 
 // 个人信息表单
 const form = reactive({
-  email: '',
-  nickname: '',
-  school: '',
-  phone: '',
-  contact: '',
-  avatarUrl: '',
+  email: "",
+  nickname: "",
+  school: "",
+  phone: "",
+  contact: "",
+  avatarUrl: "",
+  contactVisible: true,
 });
 
 // 密码表单
 const pwdForm = reactive({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: '',
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: "",
 });
 
 const rules = {
   email: [
     {
       pattern: /^$|^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      message: '请输入正确的邮箱格式',
-      trigger: ['blur', 'change'],
+      message: "请输入正确的邮箱格式",
+      trigger: ["blur", "change"],
     },
   ],
   nickname: [
-    { required: true, message: '请输入昵称', trigger: 'blur' },
-    { min: 2, max: 20, message: '昵称长度为2~20个字符', trigger: 'blur' },
+    { required: true, message: "请输入昵称", trigger: "blur" },
+    { min: 2, max: 20, message: "昵称长度为2~20个字符", trigger: "blur" },
   ],
-  school: [{ required: true, message: '请输入学校名称', trigger: 'blur' }],
+  school: [{ required: true, message: "请输入学校名称", trigger: "blur" }],
   phone: [
     {
       pattern: /^(1[3-9]\d{9})?$/,
-      message: '请输入正确的11位手机号',
-      trigger: ['blur', 'change'],
+      message: "请输入正确的11位手机号",
+      trigger: ["blur", "change"],
     },
   ],
   contact: [
     {
       pattern: /^$|^1[3-9]\d{9}$|^[a-zA-Z0-9_-]+$/,
-      message: '请输入有效手机号或微信号',
-      trigger: 'blur',
+      message: "请输入有效手机号或微信号",
+      trigger: "blur",
     },
   ],
 };
 
 const validateNewPassword = (rule, value, callback) => {
-  if (value.length < 6) { callback(new Error('密码长度不能少于6位')); }
-  else { callback(); }
+  if (value.length < 6) {
+    callback(new Error("密码长度不能少于6位"));
+  } else {
+    callback();
+  }
 };
 
 const validateConfirmPassword = (rule, value, callback) => {
-  if (value !== pwdForm.newPassword) { callback(new Error('两次输入的密码不一致')); }
-  else { callback(); }
+  if (value !== pwdForm.newPassword) {
+    callback(new Error("两次输入的密码不一致"));
+  } else {
+    callback();
+  }
 };
 
 const pwdRules = {
-  oldPassword: [{ required: true, message: '请输入当前密码', trigger: 'blur' }],
+  oldPassword: [{ required: true, message: "请输入当前密码", trigger: "blur" }],
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { validator: validateNewPassword, trigger: 'blur' },
+    { required: true, message: "请输入新密码", trigger: "blur" },
+    { validator: validateNewPassword, trigger: "blur" },
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入新密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: 'blur' },
+    { required: true, message: "请再次输入新密码", trigger: "blur" },
+    { validator: validateConfirmPassword, trigger: "blur" },
   ],
 };
 
 onMounted(() => {
   if (!userStore.isLoggedIn) {
-    router.push('/');
+    router.push("/");
     return;
   }
   const user = userStore.user;
   if (user) {
-    form.email = user.email || '';
-    form.nickname = user.nickname || '';
-    form.school = user.school || '';
-    form.phone = user.phone || '';
-    form.contact = user.contact || '';
-    form.avatarUrl = user.avatarUrl || '';
+    form.email = user.email || "";
+    form.nickname = user.nickname || "";
+    form.school = user.school || "";
+    form.phone = user.phone || "";
+    form.contact = user.contact || "";
+    form.avatarUrl = user.avatarUrl || "";
+    form.contactVisible = user.contactVisible !== false;
   }
 });
 
@@ -245,9 +290,9 @@ async function handleAvatarChange(e) {
   if (!file) return;
 
   // 校验类型
-  if (!file.type.startsWith('image/')) {
-    ElMessage.error('只能上传图片文件');
-    avatarInput.value.value = '';
+  if (!file.type.startsWith("image/")) {
+    ElMessage.error("只能上传图片文件");
+    avatarInput.value.value = "";
     return;
   }
 
@@ -260,12 +305,12 @@ async function handleAvatarChange(e) {
     // 先同步持久化到后端，再更新本地缓存
     await updateProfile({ avatarUrl: base64 });
     userStore.updateProfile({ avatarUrl: base64 });
-    ElMessage.success('头像已更新');
+    ElMessage.success("头像已更新");
   } catch {
-    ElMessage.error('图片处理失败，请重试');
+    ElMessage.error("图片处理失败，请重试");
   } finally {
     avatarUploading.value = false;
-    avatarInput.value.value = '';
+    avatarInput.value.value = "";
   }
 }
 
@@ -284,6 +329,7 @@ async function handleSave() {
       phone: form.phone || undefined,
       contact: form.contact,
       avatarUrl: form.avatarUrl,
+      contactVisible: form.contactVisible,
     });
     userStore.updateProfile({
       email: form.email || undefined,
@@ -292,10 +338,11 @@ async function handleSave() {
       phone: form.phone || undefined,
       contact: form.contact,
       avatarUrl: form.avatarUrl,
+      contactVisible: form.contactVisible,
     });
-    ElMessage.success('个人信息已更新');
+    ElMessage.success("个人信息已更新");
   } catch (error) {
-    const msg = error.response?.data?.message || '保存失败，请重试';
+    const msg = error.response?.data?.message || "保存失败，请重试";
     ElMessage.error(msg);
   } finally {
     saving.value = false;
@@ -305,12 +352,13 @@ async function handleSave() {
 function resetForm() {
   const user = userStore.user;
   if (user) {
-    form.email = user.email || '';
-    form.nickname = user.nickname || '';
-    form.school = user.school || '';
-    form.phone = user.phone || '';
-    form.contact = user.contact || '';
-    form.avatarUrl = user.avatarUrl || '';
+    form.email = user.email || "";
+    form.nickname = user.nickname || "";
+    form.school = user.school || "";
+    form.phone = user.phone || "";
+    form.contact = user.contact || "";
+    form.avatarUrl = user.avatarUrl || "";
+    form.contactVisible = user.contactVisible !== false;
   }
 }
 
@@ -320,12 +368,14 @@ async function handleChangePassword() {
   if (!valid) return;
 
   try {
-    await ElMessageBox.confirm('确认修改密码？', '提示', {
-      confirmButtonText: '确认',
-      cancelButtonText: '取消',
-      type: 'warning',
+    await ElMessageBox.confirm("确认修改密码？", "提示", {
+      confirmButtonText: "确认",
+      cancelButtonText: "取消",
+      type: "warning",
     });
-  } catch { return; }
+  } catch {
+    return;
+  }
 
   changingPwd.value = true;
   try {
@@ -333,11 +383,11 @@ async function handleChangePassword() {
       oldPassword: pwdForm.oldPassword,
       newPassword: pwdForm.newPassword,
     });
-    ElMessage.success('密码修改成功，请重新登录');
+    ElMessage.success("密码修改成功，请重新登录");
     userStore.logout();
-    router.push('/');
+    router.push("/");
   } catch (error) {
-    const msg = error.response?.data?.message || '密码修改失败';
+    const msg = error.response?.data?.message || "密码修改失败";
     ElMessage.error(msg);
   } finally {
     changingPwd.value = false;
@@ -346,7 +396,7 @@ async function handleChangePassword() {
 
 function handleLogout() {
   userStore.logout();
-  router.push('/');
+  router.push("/");
 }
 </script>
 

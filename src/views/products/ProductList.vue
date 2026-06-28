@@ -1,4 +1,5 @@
-<!-- AI 生成，手动调整：搜索/分类筛选/价格排序/分页/商品卡片/登录后弹窗全部整合 -->
+<!-- 【模块二：商品发布与管理】商品列表与搜索 -->
+<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="home-page">
     <!-- 顶部导航栏 -->
@@ -23,18 +24,33 @@
                   <el-dropdown-item command="myProducts">
                     <el-icon><Goods /></el-icon>我的发布
                   </el-dropdown-item>
+                  <el-dropdown-item command="orders">
+                    <el-icon><List /></el-icon>我的订单
+                  </el-dropdown-item>
+                  <el-dropdown-item v-if="userStore.isAdmin" command="admin">
+                    <el-icon><Setting /></el-icon>管理后台
+                  </el-dropdown-item>
                   <el-dropdown-item command="logout" divided>
                     <el-icon><SwitchButton /></el-icon>退出登录
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-button type="primary" size="small" class="publish-btn" @click="goPublish">
+            <el-button
+              type="primary"
+              size="small"
+              class="publish-btn"
+              @click="goPublish"
+            >
               <el-icon><Plus /></el-icon>发布商品
             </el-button>
           </template>
           <template v-else>
-            <el-button type="primary" size="small" @click="userStore.openLogin()">
+            <el-button
+              type="primary"
+              size="small"
+              @click="userStore.openLogin()"
+            >
               登录
             </el-button>
           </template>
@@ -74,13 +90,38 @@
             </el-button>
           </div>
           <div class="sort-btn">
+            <el-input-number
+              v-model="minPrice"
+              :min="0"
+              placeholder="最低价"
+              size="small"
+              controls-position="right"
+              style="width: 110px"
+              @change="onPriceRangeChange"
+            />
+            <span class="price-sep">-</span>
+            <el-input-number
+              v-model="maxPrice"
+              :min="0"
+              placeholder="最高价"
+              size="small"
+              controls-position="right"
+              style="width: 110px"
+              @change="onPriceRangeChange"
+            />
             <el-button
               :type="priceOrder ? 'warning' : 'default'"
               size="small"
               @click="togglePriceOrder"
             >
               <el-icon><Sort /></el-icon>
-              {{ priceOrder === 'asc' ? '价格 ↑' : priceOrder === 'desc' ? '价格 ↓' : '价格排序' }}
+              {{
+                priceOrder === "asc"
+                  ? "价格 ↑"
+                  : priceOrder === "desc"
+                    ? "价格 ↓"
+                    : "价格排序"
+              }}
             </el-button>
           </div>
         </div>
@@ -113,8 +154,15 @@
               :alt="product.title"
             />
             <div v-else class="placeholder-img">暂无图片</div>
-            <span v-if="product.originalPrice && product.price < product.originalPrice" class="discount-badge">
-              {{ Math.round((1 - product.price / product.originalPrice) * 100) }}% OFF
+            <span
+              v-if="
+                product.originalPrice && product.price < product.originalPrice
+              "
+              class="discount-badge"
+            >
+              {{
+                Math.round((1 - product.price / product.originalPrice) * 100)
+              }}% OFF
             </span>
           </div>
           <div class="card-body">
@@ -130,7 +178,9 @@
               <span class="card-price">
                 <span class="price-symbol">¥</span>{{ product.price }}
               </span>
-              <span class="card-seller">{{ product.sellerSchool }} · {{ product.sellerNickname }}</span>
+              <span class="card-seller"
+                >{{ product.sellerSchool }} · {{ product.sellerNickname }}</span
+              >
             </div>
           </div>
         </div>
@@ -156,19 +206,28 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { ElMessage } from 'element-plus';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage } from "element-plus";
 import {
-  UserFilled, ArrowDown, User, Goods, SwitchButton, Plus,
-  Search, Sort, Loading,
-} from '@element-plus/icons-vue';
-import { PRODUCT_CATEGORIES } from '@/constants/categories';
-import { useUserStore } from '@/store/useUserStore';
-import { getProducts } from '@/api/product';
-import LoginDialog from '@/components/LoginDialog.vue';
-import RegisterDialog from '@/components/RegisterDialog.vue';
-import ForgotPassword from '@/components/ForgotPassword.vue';
+  UserFilled,
+  ArrowDown,
+  User,
+  Goods,
+  SwitchButton,
+  Plus,
+  Search,
+  Sort,
+  Loading,
+  List,
+  Setting,
+} from "@element-plus/icons-vue";
+import { PRODUCT_CATEGORIES } from "@/constants/categories";
+import { useUserStore } from "@/store/useUserStore";
+import { getProducts } from "@/api/product";
+import LoginDialog from "@/components/LoginDialog.vue";
+import RegisterDialog from "@/components/RegisterDialog.vue";
+import ForgotPassword from "@/components/ForgotPassword.vue";
 
 const router = useRouter();
 const userStore = useUserStore();
@@ -181,9 +240,11 @@ const currentPage = ref(1);
 const pageSize = 10;
 
 // 搜索与筛选
-const searchKeyword = ref('');
-const selectedCategory = ref('');
-const priceOrder = ref(''); // 'asc' | 'desc' | ''
+const searchKeyword = ref("");
+const selectedCategory = ref("");
+const priceOrder = ref("");
+const minPrice = ref(null);
+const maxPrice = ref(null);
 const categories = PRODUCT_CATEGORIES;
 let searchTimer = null;
 
@@ -198,12 +259,14 @@ async function fetchProducts() {
     if (searchKeyword.value) params.search = searchKeyword.value;
     if (selectedCategory.value) params.category = selectedCategory.value;
     if (priceOrder.value) params.priceOrder = priceOrder.value;
+    if (minPrice.value != null) params.minPrice = minPrice.value;
+    if (maxPrice.value != null) params.maxPrice = maxPrice.value;
 
     const res = await getProducts(params);
     products.value = res.data.products;
     total.value = res.data.total;
   } catch {
-    ElMessage.error('加载商品失败');
+    ElMessage.error("加载商品失败");
   } finally {
     loading.value = false;
   }
@@ -225,20 +288,27 @@ function filterByCategory(cat) {
   fetchProducts();
 }
 
+function onPriceRangeChange() {
+  currentPage.value = 1;
+  fetchProducts();
+}
+
 // 价格排序切换
 function togglePriceOrder() {
-  if (!priceOrder.value) priceOrder.value = 'asc';
-  else if (priceOrder.value === 'asc') priceOrder.value = 'desc';
-  else priceOrder.value = '';
+  if (!priceOrder.value) priceOrder.value = "asc";
+  else if (priceOrder.value === "asc") priceOrder.value = "desc";
+  else priceOrder.value = "";
   currentPage.value = 1;
   fetchProducts();
 }
 
 // 刷新列表
 function refreshList() {
-  searchKeyword.value = '';
-  selectedCategory.value = '';
-  priceOrder.value = '';
+  searchKeyword.value = "";
+  selectedCategory.value = "";
+  priceOrder.value = "";
+  minPrice.value = null;
+  maxPrice.value = null;
   currentPage.value = 1;
   fetchProducts();
 }
@@ -254,17 +324,21 @@ function goPublish() {
     userStore.openLogin();
     return;
   }
-  router.push('/publish');
+  router.push("/publish");
 }
 
 // 下拉菜单
 function handleCommand(command) {
-  if (command === 'profile') router.push('/profile');
-  else if (command === 'myProducts') {
-    router.push('/my-products');
-  } else if (command === 'logout') {
+  if (command === "profile") router.push("/profile");
+  else if (command === "myProducts") {
+    router.push("/my-products");
+  } else if (command === "orders") {
+    router.push("/orders");
+  } else if (command === "admin") {
+    router.push("/admin");
+  } else if (command === "logout") {
     userStore.logout();
-    router.push('/');
+    router.push("/");
   }
 }
 
@@ -378,6 +452,17 @@ onMounted(() => {
   flex-wrap: wrap;
 }
 
+.sort-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.price-sep {
+  color: var(--text-secondary);
+}
+
 /* ---- 主内容 ---- */
 .main-content {
   flex: 1;
@@ -411,7 +496,9 @@ onMounted(() => {
   box-shadow: var(--shadow);
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .product-card:hover {

@@ -1,4 +1,5 @@
-// AI 生成，手动调整：图片压缩工具，超过2MB自动用canvas等比缩放压缩
+// 【模块二：商品发布与管理】图片压缩工具
+// AI 生成：手动调整前请勿修改
 // 返回 Promise<base64DataUrl>
 
 /**
@@ -23,10 +24,10 @@ export function compressImage(file, maxSizeMB = 2, maxWidth = 1920) {
           width = maxWidth;
         }
 
-        const canvas = document.createElement('canvas');
+        const canvas = document.createElement("canvas");
         canvas.width = width;
         canvas.height = height;
-        const ctx = canvas.getContext('2d');
+        const ctx = canvas.getContext("2d");
         ctx.drawImage(img, 0, 0, width, height);
 
         // 尝试以不同质量压缩到目标体积以下
@@ -34,7 +35,7 @@ export function compressImage(file, maxSizeMB = 2, maxWidth = 1920) {
         const maxBytes = maxSizeMB * 1024 * 1024;
 
         function tryQuality() {
-          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          const dataUrl = canvas.toDataURL("image/jpeg", quality);
           const approxBytes = (dataUrl.length * 3) / 4; // base64 近似原始字节数
           if (approxBytes > maxBytes && quality > 0.2) {
             quality -= 0.1;
@@ -46,10 +47,10 @@ export function compressImage(file, maxSizeMB = 2, maxWidth = 1920) {
 
         tryQuality();
       };
-      img.onerror = () => reject(new Error('图片加载失败'));
+      img.onerror = () => reject(new Error("图片加载失败"));
       img.src = e.target.result;
     };
-    reader.onerror = () => reject(new Error('文件读取失败'));
+    reader.onerror = () => reject(new Error("文件读取失败"));
     reader.readAsDataURL(file);
   });
 }

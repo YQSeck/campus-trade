@@ -1,4 +1,5 @@
-<!-- AI 生成，手动调整：字段名对齐 API.md，模拟邮箱验证流程提示 -->
+<!-- 【模块一：用户系统】忘记密码弹窗 -->
+<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <el-dialog
     v-model="visible"
@@ -39,7 +40,7 @@
             class="submit-btn"
             @click="handleSubmit"
           >
-            {{ loading ? '发送中...' : '发送新密码' }}
+            {{ loading ? "发送中..." : "发送新密码" }}
           </el-button>
         </el-form-item>
       </el-form>
@@ -51,9 +52,15 @@
         <el-icon :size="48" color="#67c23a"><CircleCheckFilled /></el-icon>
         <h3 class="success-title">邮件已发送</h3>
         <p class="success-desc">
-          新密码已发送至 <strong>{{ form.email }}</strong>，请查收邮件后重新登录。
+          新密码已发送至 <strong>{{ form.email }}</strong
+          >，请查收邮件后重新登录。
         </p>
-        <el-button type="primary" size="large" class="goto-login-btn" @click="switchToLogin">
+        <el-button
+          type="primary"
+          size="large"
+          class="goto-login-btn"
+          @click="switchToLogin"
+        >
           去登录
         </el-button>
       </div>
@@ -68,11 +75,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue';
-import { Message, CircleCheckFilled } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
-import { forgotPassword } from '@/api/auth';
-import { useUserStore } from '@/store/useUserStore';
+import { ref, reactive, watch } from "vue";
+import { Message, CircleCheckFilled } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
+import { forgotPassword } from "@/api/auth";
+import { useUserStore } from "@/store/userStore";
 
 const userStore = useUserStore();
 const formRef = ref(null);
@@ -81,21 +88,30 @@ const step = ref(1);
 
 // 通过 store 控制显隐
 const visible = ref(false);
-watch(() => userStore.forgotDialogVisible, (val) => {
-  visible.value = val;
-  // 每次打开时重置到第一步
-  if (val) step.value = 1;
+watch(
+  () => userStore.forgotDialogVisible,
+  (val) => {
+    visible.value = val;
+    // 每次打开时重置到第一步
+    if (val) step.value = 1;
+  },
+);
+watch(visible, (val) => {
+  userStore.forgotDialogVisible = val;
 });
-watch(visible, (val) => { userStore.forgotDialogVisible = val; });
 
 const form = reactive({
-  email: '',
+  email: "",
 });
 
 const rules = {
   email: [
-    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: ['blur', 'change'] },
+    { required: true, message: "请输入邮箱地址", trigger: "blur" },
+    {
+      type: "email",
+      message: "请输入正确的邮箱格式",
+      trigger: ["blur", "change"],
+    },
   ],
 };
 
@@ -112,7 +128,7 @@ async function handleSubmit() {
     // 成功后进入第二步
     step.value = 2;
   } catch (error) {
-    const msg = error.response?.data?.message || '发送失败，请检查邮箱是否正确';
+    const msg = error.response?.data?.message || "发送失败，请检查邮箱是否正确";
     ElMessage.error(msg);
   } finally {
     loading.value = false;

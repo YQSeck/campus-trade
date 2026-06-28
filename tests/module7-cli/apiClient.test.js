@@ -1,3 +1,5 @@
+// 【模块七：CLI】apiClient 单元测试
+// AI 生成：手动调整前请勿修改
 // AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
 var { describe, it, before, after, beforeEach } = require('node:test');
 var assert = require('node:assert/strict');

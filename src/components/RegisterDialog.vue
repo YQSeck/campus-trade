@@ -1,4 +1,5 @@
-<!-- AI 生成，手动调整：字段名对齐 API.md（email/password/nickname/school），密码确认校验 -->
+<!-- 【模块一：用户系统】注册弹窗 -->
+<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <el-dialog
     v-model="visible"
@@ -97,7 +98,7 @@
           class="register-btn"
           @click="handleRegister"
         >
-          {{ loading ? '注册中...' : '注 册' }}
+          {{ loading ? "注册中..." : "注册" }}
         </el-button>
       </el-form-item>
     </el-form>
@@ -111,11 +112,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, watch } from 'vue';
-import { Message, Lock, User, School, Phone } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
-import { register } from '@/api/auth';
-import { useUserStore } from '@/store/useUserStore';
+import { ref, reactive, watch } from "vue";
+import { Message, Lock, User, School, Phone } from "@element-plus/icons-vue";
+import { ElMessage } from "element-plus";
+import { register } from "@/api/auth";
+import { useUserStore } from "@/store/userStore";
 
 const userStore = useUserStore();
 const formRef = ref(null);
@@ -123,24 +124,31 @@ const loading = ref(false);
 
 // 通过 store 控制显隐
 const visible = ref(false);
-watch(() => userStore.registerDialogVisible, (val) => { visible.value = val; });
-watch(visible, (val) => { userStore.registerDialogVisible = val; });
+watch(
+  () => userStore.registerDialogVisible,
+  (val) => {
+    visible.value = val;
+  },
+);
+watch(visible, (val) => {
+  userStore.registerDialogVisible = val;
+});
 
 // 表单字段：与 API.md POST /api/auth/register 完全一致
 const form = reactive({
-  email: '',
-  phone: '',
-  nickname: '',
-  school: '',
-  password: '',
-  confirmPassword: '',
+  email: "",
+  phone: "",
+  nickname: "",
+  school: "",
+  password: "",
+  confirmPassword: "",
 });
 
 // 校验规则
 const validateEmailOrPhone = (rule, value, callback) => {
   // email 和 phone 至少一个不为空（由 email 字段触发校验）
   if (!form.email.trim() && !form.phone.trim()) {
-    callback(new Error('邮箱和手机号至少填写一项'));
+    callback(new Error("邮箱和手机号至少填写一个"));
   } else {
     callback();
   }
@@ -148,7 +156,7 @@ const validateEmailOrPhone = (rule, value, callback) => {
 
 const validateConfirmPassword = (rule, value, callback) => {
   if (value !== form.password) {
-    callback(new Error('两次输入的密码不一致'));
+    callback(new Error("两次输入的密码不一致"));
   } else {
     callback();
   }
@@ -156,34 +164,32 @@ const validateConfirmPassword = (rule, value, callback) => {
 
 const rules = {
   email: [
-    { validator: validateEmailOrPhone, trigger: 'blur' },
+    { validator: validateEmailOrPhone, trigger: "blur" },
     {
       pattern: /^$|^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      message: '请输入正确的邮箱格式',
-      trigger: ['blur', 'change'],
+      message: "请输入正确的邮箱格式",
+      trigger: ["blur", "change"],
     },
   ],
   phone: [
     {
       pattern: /^(1[3-9]\d{9})?$/,
-      message: '请输入正确的11位手机号',
-      trigger: ['blur', 'change'],
+      message: "请输入正确的11位手机号",
+      trigger: ["blur", "change"],
     },
   ],
   nickname: [
-    { required: true, message: '请输入昵称', trigger: 'blur' },
-    { min: 2, max: 20, message: '昵称长度为2~20个字符', trigger: 'blur' },
+    { required: true, message: "请输入昵称", trigger: "blur" },
+    { min: 2, max: 20, message: "昵称长度在2~20个字符", trigger: "blur" },
   ],
-  school: [
-    { required: true, message: '请输入学校名称', trigger: 'blur' },
-  ],
+  school: [{ required: true, message: "请输入学校名称", trigger: "blur" }],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
+    { required: true, message: "请输入密码", trigger: "blur" },
+    { min: 6, message: "密码长度不能少于6位", trigger: "blur" },
   ],
   confirmPassword: [
-    { required: true, message: '请再次输入密码', trigger: 'blur' },
-    { validator: validateConfirmPassword, trigger: 'blur' },
+    { required: true, message: "请再次输入密码", trigger: "blur" },
+    { validator: validateConfirmPassword, trigger: "blur" },
   ],
 };
 
@@ -203,7 +209,7 @@ async function handleRegister() {
       nickname: form.nickname,
       school: form.school,
     });
-    ElMessage.success('注册成功，请登录');
+    ElMessage.success("注册成功，请登录");
     // 注册成功后切换到登录弹窗
     userStore.registerDialogVisible = false;
     userStore.loginDialogVisible = true;
@@ -214,13 +220,13 @@ async function handleRegister() {
 
     if (!error.response) {
       // 网络不通或后端未启动
-      ElMessage.error('无法连接服务器，请检查网络或联系管理员');
+      ElMessage.error("无法连接服务器，请检查网络或联系管理员");
     } else if (status === 409) {
-      ElMessage.warning(msg || '该邮箱已被注册');
+      ElMessage.warning(msg || "该邮箱已被注册");
     } else if (status === 400) {
-      ElMessage.warning(msg || '请完善注册信息');
+      ElMessage.warning(msg || "请完善注册信息");
     } else {
-      ElMessage.error(msg || '注册失败，请稍后重试');
+      ElMessage.error(msg || "注册失败，请稍后重试");
     }
   } finally {
     loading.value = false;

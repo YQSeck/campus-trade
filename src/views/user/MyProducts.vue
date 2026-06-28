@@ -1,4 +1,5 @@
-<!-- AI 生成，手动调整：mine参数只拉当前用户商品，卡片按钮：编辑/下架-上架/删除 -->
+<!-- 【模块二：商品发布与管理】我的发布列表 -->
+<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="my-products-page">
     <header class="top-bar">
@@ -15,7 +16,11 @@
     <main class="main-content">
       <!-- Tab 切换 -->
       <div class="tab-bar">
-        <el-radio-group v-model="statusFilter" size="small" @change="fetchMyProducts">
+        <el-radio-group
+          v-model="statusFilter"
+          size="small"
+          @change="fetchMyProducts"
+        >
           <el-radio-button value="active">在售中</el-radio-button>
           <el-radio-button value="removed">已下架</el-radio-button>
           <el-radio-button value="">全部</el-radio-button>
@@ -30,23 +35,33 @@
 
       <!-- 空状态 -->
       <el-empty v-else-if="products.length === 0" description="暂无发布商品">
-        <el-button type="primary" @click="$router.push('/publish')">去发布</el-button>
+        <el-button type="primary" @click="$router.push('/publish')"
+          >去发布</el-button
+        >
       </el-empty>
 
       <!-- 商品列表 -->
       <div v-else class="product-list">
         <div v-for="product in products" :key="product.id" class="product-item">
-          <div class="item-image" @click="$router.push(`/product/${product.id}`)">
+          <div
+            class="item-image"
+            @click="$router.push(`/product/${product.id}`)"
+          >
             <img
               v-if="product.images?.[0]"
               :src="product.images[0]"
               :alt="product.title"
             />
             <div v-else class="placeholder-img">暂无图片</div>
-            <span v-if="product.status === 'removed'" class="removed-overlay">已下架</span>
+            <span v-if="product.status === 'removed'" class="removed-overlay"
+              >已下架</span
+            >
           </div>
 
-          <div class="item-info" @click="$router.push(`/product/${product.id}`)">
+          <div
+            class="item-info"
+            @click="$router.push(`/product/${product.id}`)"
+          >
             <h3 class="item-title">{{ product.title }}</h3>
             <div class="item-meta">
               <el-tag size="small" type="info">{{ product.category }}</el-tag>
@@ -94,24 +109,31 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { useUserStore } from '@/store/useUserStore';
-import { ArrowLeft, Loading, Edit, Remove, Check, Delete } from '@element-plus/icons-vue';
-import { getProducts, updateProduct, deleteProduct } from '@/api/product';
+import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { useUserStore } from "@/store/useUserStore";
+import {
+  ArrowLeft,
+  Loading,
+  Edit,
+  Remove,
+  Check,
+  Delete,
+} from "@element-plus/icons-vue";
+import { getProducts, updateProduct, deleteProduct } from "@/api/product";
 
 const router = useRouter();
 const userStore = useUserStore();
 const products = ref([]);
 const loading = ref(false);
-const statusFilter = ref('active');
+const statusFilter = ref("active");
 
 // 时间格式化
 function formatDate(dateStr) {
-  if (!dateStr) return '';
+  if (!dateStr) return "";
   const d = new Date(dateStr);
-  return d.toLocaleDateString('zh-CN');
+  return d.toLocaleDateString("zh-CN");
 }
 
 // 获取当前用户的商品
@@ -123,7 +145,7 @@ async function fetchMyProducts() {
     const res = await getProducts(params);
     products.value = res.data.products;
   } catch {
-    ElMessage.error('加载失败');
+    ElMessage.error("加载失败");
   } finally {
     loading.value = false;
   }
@@ -136,10 +158,13 @@ function goEdit(id) {
 
 // 下架 / 上架
 async function handleToggleStatus(product) {
-  const newStatus = product.status === 'active' ? 'removed' : 'active';
-  const actionText = newStatus === 'active' ? '上架' : '下架';
+  const newStatus = product.status === "active" ? "removed" : "active";
+  const actionText = newStatus === "active" ? "上架" : "下架";
   try {
-    await ElMessageBox.confirm(`确认${actionText}「${product.title}」？`, '提示');
+    await ElMessageBox.confirm(
+      `确认${actionText}「${product.title}」？`,
+      "提示",
+    );
   } catch {
     return;
   }
@@ -155,28 +180,32 @@ async function handleToggleStatus(product) {
 // 删除
 async function handleDelete(product) {
   try {
-    await ElMessageBox.confirm(`确认删除「${product.title}」？此操作不可撤销。`, '警告', {
-      type: 'warning',
-      confirmButtonText: '确认删除',
-      cancelButtonText: '取消',
-    });
+    await ElMessageBox.confirm(
+      `确认删除「${product.title}」？此操作不可撤销。`,
+      "警告",
+      {
+        type: "warning",
+        confirmButtonText: "确认删除",
+        cancelButtonText: "取消",
+      },
+    );
   } catch {
     return;
   }
   try {
     await deleteProduct(product.id);
-    ElMessage.success('已删除');
+    ElMessage.success("已删除");
     fetchMyProducts();
   } catch (error) {
-    ElMessage.error(error.response?.data?.message || '删除失败');
+    ElMessage.error(error.response?.data?.message || "删除失败");
   }
 }
 
 onMounted(() => {
   // 鉴权检查
   if (!userStore.isLoggedIn) {
-    ElMessage.warning('请先登录');
-    router.push('/');
+    ElMessage.warning("请先登录");
+    router.push("/");
     return;
   }
   fetchMyProducts();
