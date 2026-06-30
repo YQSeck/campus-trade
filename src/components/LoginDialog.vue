@@ -75,7 +75,7 @@ import { ref, reactive, watch } from "vue";
 import { Message, Lock } from "@element-plus/icons-vue";
 import { ElMessage } from "element-plus";
 import { login } from "@/api/auth";
-import { useUserStore } from "@/store/useUserStore";
+import { useUserStore } from "@/store/userStore";
 
 const userStore = useUserStore();
 const formRef = ref(null);

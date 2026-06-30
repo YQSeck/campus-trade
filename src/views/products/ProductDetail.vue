@@ -153,7 +153,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
 import { ArrowLeft, UserFilled, Loading } from "@element-plus/icons-vue";
-import { useUserStore } from "@/store/useUserStore";
+import { useUserStore } from "@/store/userStore";
 import { getProductDetail } from "@/api/product";
 import { getComments, addComment } from "@/api/comments";
 import { createOrder } from "@/api/orders";

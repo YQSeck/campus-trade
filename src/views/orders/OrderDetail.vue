@@ -50,7 +50,7 @@ import { useRoute } from "vue-router";
 import { getOrderDetail } from "@/api/orders";
 import { createReview } from "@/api/reviews";
 import { ElMessage } from "element-plus";
-import { useUserStore } from "@/store/useUserStore";
+import { useUserStore } from "@/store/userStore";
 
 const route = useRoute();
 const userStore = useUserStore();

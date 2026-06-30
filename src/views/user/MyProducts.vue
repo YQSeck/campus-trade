@@ -112,7 +112,7 @@
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { useUserStore } from "@/store/useUserStore";
+import { useUserStore } from "@/store/userStore";
 import {
   ArrowLeft,
   Loading,

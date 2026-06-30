@@ -223,7 +223,7 @@ import {
   Setting,
 } from "@element-plus/icons-vue";
 import { PRODUCT_CATEGORIES } from "@/constants/categories";
-import { useUserStore } from "@/store/useUserStore";
+import { useUserStore } from "@/store/userStore";
 import { getProducts } from "@/api/product";
 import LoginDialog from "@/components/LoginDialog.vue";
 import RegisterDialog from "@/components/RegisterDialog.vue";

@@ -179,7 +179,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { ArrowLeft, UserFilled } from "@element-plus/icons-vue";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { useUserStore } from "@/store/useUserStore";
+import { useUserStore } from "@/store/userStore";
 import { updateProfile, changePassword } from "@/api/auth";
 import { compressImage } from "@/utils/image";
 

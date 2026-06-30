@@ -1,26 +1,25 @@
 // 【模块八：开放 Skill】定价数据单元测试
 // AI 生成：手动调整前请勿修改
-// AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
 var { describe, it } = require('node:test');
 var assert = require('node:assert/strict');
 var pricingData = require('../../src/skills/pricingData');
 
-describe('pricingData - 鏁版嵁甯搁噺', function() {
-  it('validCategories 鍖呭惈 5 涓垎绫?, function() {
-    assert.deepStrictEqual(pricingData.validCategories, ['涔︾睄', '鐢靛瓙浜у搧', '鐢熸椿鐢ㄥ搧', '琛ｇ墿', '鍏朵粬']);
+describe('pricingData - 数据常量', function() {
+  it('validCategories 包含 5 个分类', function() {
+    assert.deepStrictEqual(pricingData.validCategories, ['书籍', '电子产品', '生活用品', '衣物', '其他']);
   });
 
-  it('validConditions 鍖呭惈 5 涓垚鑹茬瓑绾?, function() {
-    assert.deepStrictEqual(pricingData.validConditions, ['鍏ㄦ柊', '鍑犱箮鍏ㄦ柊', '杞诲井浣跨敤', '鏄庢樉浣跨敤', '鑰佹棫']);
+  it('validConditions 包含 5 个成色等级', function() {
+    assert.deepStrictEqual(pricingData.validConditions, ['全新', '几乎全新', '轻微使用', '明显使用', '老旧']);
   });
 
-  it('categoryBaseRates 鎵€鏈夊€煎湪 [0, 1] 鑼冨洿鍐?, function() {
+  it('categoryBaseRates 所有值在 [0, 1] 范围内', function() {
     Object.values(pricingData.categoryBaseRates).forEach(function(rate) {
       assert.ok(rate > 0 && rate < 1);
     });
   });
 
-  it('conditionFactors 鎵€鏈夊€煎湪 [0, 1] 鑼冨洿鍐?, function() {
+  it('conditionFactors 所有值在 [0, 1] 范围内', function() {
     Object.values(pricingData.conditionFactors).forEach(function(factor) {
       assert.ok(factor > 0 && factor < 1);
     });
@@ -28,20 +27,20 @@ describe('pricingData - 鏁版嵁甯搁噺', function() {
 });
 
 describe('pricingData - getCategoryBaseRate', function() {
-  it('宸茬煡鍒嗙被杩斿洖姝ｇ‘鎶樻墸鐜?, function() {
-    assert.strictEqual(pricingData.getCategoryBaseRate('涔︾睄'), 0.45);
-    assert.strictEqual(pricingData.getCategoryBaseRate('鐢靛瓙浜у搧'), 0.55);
-    assert.strictEqual(pricingData.getCategoryBaseRate('鐢熸椿鐢ㄥ搧'), 0.40);
-    assert.strictEqual(pricingData.getCategoryBaseRate('琛ｇ墿'), 0.35);
-    assert.strictEqual(pricingData.getCategoryBaseRate('鍏朵粬'), 0.45);
+  it('已知分类返回正确折扣率', function() {
+    assert.strictEqual(pricingData.getCategoryBaseRate('书籍'), 0.45);
+    assert.strictEqual(pricingData.getCategoryBaseRate('电子产品'), 0.55);
+    assert.strictEqual(pricingData.getCategoryBaseRate('生活用品'), 0.40);
+    assert.strictEqual(pricingData.getCategoryBaseRate('衣物'), 0.35);
+    assert.strictEqual(pricingData.getCategoryBaseRate('其他'), 0.45);
   });
 
-  it('鏈煡鍒嗙被鍥為€€鍒?鍏朵粬"(0.45)', function() {
-    assert.strictEqual(pricingData.getCategoryBaseRate('姹借溅'), 0.45);
-    assert.strictEqual(pricingData.getCategoryBaseRate('椋熷搧'), 0.45);
+  it('未知分类回退到"其他"(0.45)', function() {
+    assert.strictEqual(pricingData.getCategoryBaseRate('汽车'), 0.45);
+    assert.strictEqual(pricingData.getCategoryBaseRate('食品'), 0.45);
   });
 
-  it('鏈畾涔?绌哄€煎垎绫诲洖閫€鍒?鍏朵粬"', function() {
+  it('未定义/空值分类回退到"其他"', function() {
     assert.strictEqual(pricingData.getCategoryBaseRate(null), 0.45);
     assert.strictEqual(pricingData.getCategoryBaseRate(undefined), 0.45);
     assert.strictEqual(pricingData.getCategoryBaseRate(''), 0.45);
@@ -49,20 +48,20 @@ describe('pricingData - getCategoryBaseRate', function() {
 });
 
 describe('pricingData - getConditionFactor', function() {
-  it('宸茬煡鎴愯壊杩斿洖姝ｇ‘鎶樻棫鍥犲瓙', function() {
-    assert.strictEqual(pricingData.getConditionFactor('鍏ㄦ柊'), 0.95);
-    assert.strictEqual(pricingData.getConditionFactor('鍑犱箮鍏ㄦ柊'), 0.80);
-    assert.strictEqual(pricingData.getConditionFactor('杞诲井浣跨敤'), 0.60);
-    assert.strictEqual(pricingData.getConditionFactor('鏄庢樉浣跨敤'), 0.40);
-    assert.strictEqual(pricingData.getConditionFactor('鑰佹棫'), 0.25);
+  it('已知成色返回正确折旧因子', function() {
+    assert.strictEqual(pricingData.getConditionFactor('全新'), 0.95);
+    assert.strictEqual(pricingData.getConditionFactor('几乎全新'), 0.80);
+    assert.strictEqual(pricingData.getConditionFactor('轻微使用'), 0.60);
+    assert.strictEqual(pricingData.getConditionFactor('明显使用'), 0.40);
+    assert.strictEqual(pricingData.getConditionFactor('老旧'), 0.25);
   });
 
-  it('鏈煡鎴愯壊鍥為€€鍒?0.50', function() {
-    assert.strictEqual(pricingData.getConditionFactor('鐮寸儌'), 0.50);
-    assert.strictEqual(pricingData.getConditionFactor('鎶ュ簾'), 0.50);
+  it('未知成色回退到 0.50', function() {
+    assert.strictEqual(pricingData.getConditionFactor('破烂'), 0.50);
+    assert.strictEqual(pricingData.getConditionFactor('报废'), 0.50);
   });
 
-  it('鏈畾涔?绌哄€兼垚鑹插洖閫€鍒?0.50', function() {
+  it('未定义/空值成色回退到 0.50', function() {
     assert.strictEqual(pricingData.getConditionFactor(null), 0.50);
     assert.strictEqual(pricingData.getConditionFactor(undefined), 0.50);
     assert.strictEqual(pricingData.getConditionFactor(''), 0.50);
@@ -70,17 +69,17 @@ describe('pricingData - getConditionFactor', function() {
 });
 
 describe('pricingData - isValidCategory', function() {
-  it('鏈夋晥鍒嗙被杩斿洖 true', function() {
-    assert.strictEqual(pricingData.isValidCategory('涔︾睄'), true);
-    assert.strictEqual(pricingData.isValidCategory('鐢靛瓙浜у搧'), true);
-    assert.strictEqual(pricingData.isValidCategory('鐢熸椿鐢ㄥ搧'), true);
-    assert.strictEqual(pricingData.isValidCategory('琛ｇ墿'), true);
-    assert.strictEqual(pricingData.isValidCategory('鍏朵粬'), true);
+  it('有效分类返回 true', function() {
+    assert.strictEqual(pricingData.isValidCategory('书籍'), true);
+    assert.strictEqual(pricingData.isValidCategory('电子产品'), true);
+    assert.strictEqual(pricingData.isValidCategory('生活用品'), true);
+    assert.strictEqual(pricingData.isValidCategory('衣物'), true);
+    assert.strictEqual(pricingData.isValidCategory('其他'), true);
   });
 
-  it('鏃犳晥鍒嗙被杩斿洖 false', function() {
-    assert.strictEqual(pricingData.isValidCategory('姹借溅'), false);
-    assert.strictEqual(pricingData.isValidCategory('椋熷搧'), false);
+  it('无效分类返回 false', function() {
+    assert.strictEqual(pricingData.isValidCategory('汽车'), false);
+    assert.strictEqual(pricingData.isValidCategory('食品'), false);
     assert.strictEqual(pricingData.isValidCategory(''), false);
     assert.strictEqual(pricingData.isValidCategory(null), false);
     assert.strictEqual(pricingData.isValidCategory(undefined), false);
@@ -88,29 +87,29 @@ describe('pricingData - isValidCategory', function() {
 });
 
 describe('pricingData - isValidCondition', function() {
-  it('鏈夋晥鎴愯壊杩斿洖 true', function() {
-    assert.strictEqual(pricingData.isValidCondition('鍏ㄦ柊'), true);
-    assert.strictEqual(pricingData.isValidCondition('鍑犱箮鍏ㄦ柊'), true);
-    assert.strictEqual(pricingData.isValidCondition('杞诲井浣跨敤'), true);
-    assert.strictEqual(pricingData.isValidCondition('鏄庢樉浣跨敤'), true);
-    assert.strictEqual(pricingData.isValidCondition('鑰佹棫'), true);
+  it('有效成色返回 true', function() {
+    assert.strictEqual(pricingData.isValidCondition('全新'), true);
+    assert.strictEqual(pricingData.isValidCondition('几乎全新'), true);
+    assert.strictEqual(pricingData.isValidCondition('轻微使用'), true);
+    assert.strictEqual(pricingData.isValidCondition('明显使用'), true);
+    assert.strictEqual(pricingData.isValidCondition('老旧'), true);
   });
 
-  it('鏃犳晥鎴愯壊杩斿洖 false', function() {
-    assert.strictEqual(pricingData.isValidCondition('鐮寸儌'), false);
+  it('无效成色返回 false', function() {
+    assert.strictEqual(pricingData.isValidCondition('破烂'), false);
     assert.strictEqual(pricingData.isValidCondition(''), false);
     assert.strictEqual(pricingData.isValidCondition(null), false);
     assert.strictEqual(pricingData.isValidCondition(undefined), false);
   });
 });
 
-describe('pricingData - 5 鍒嗙被 x 5 鎴愯壊鍏ㄨ鐩?, function() {
+describe('pricingData - 5 分类 x 5 成色全覆盖', function() {
   var categories = pricingData.validCategories;
   var conditions = pricingData.validConditions;
 
   categories.forEach(function(category) {
     conditions.forEach(function(condition) {
-      it(category + ' + ' + condition + ' 杩斿洖鏁板€?, function() {
+      it(category + ' + ' + condition + ' 返回数值', function() {
         var rate = pricingData.getCategoryBaseRate(category);
         var factor = pricingData.getConditionFactor(condition);
         assert.ok(typeof rate === 'number');

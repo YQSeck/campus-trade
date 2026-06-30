@@ -171,7 +171,7 @@ import { ref, reactive, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage } from "element-plus";
 import { ArrowLeft, Plus, Delete } from "@element-plus/icons-vue";
-import { useUserStore } from "@/store/useUserStore";
+import { useUserStore } from "@/store/userStore";
 import { createProduct, updateProduct, getProductDetail } from "@/api/product";
 import { compressImage } from "@/utils/image";
 import { PRODUCT_CATEGORIES } from "@/constants/categories";
