@@ -2,6 +2,9 @@
 <!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="admin-panel" v-if="isAdmin">
+    <el-button link class="back-btn" @click="$router.push('/')">
+      <el-icon><ArrowLeft /></el-icon>返回首页
+    </el-button>
     <h2>管理员控制台</h2>
 
     <!-- 统计卡片 -->
@@ -190,6 +193,7 @@
 
 <script setup>
 import { ref, onMounted, watch, nextTick } from "vue";
+import { ArrowLeft } from "@element-plus/icons-vue";
 import request from "@/utils/request";
 import {
   getAdminStats,

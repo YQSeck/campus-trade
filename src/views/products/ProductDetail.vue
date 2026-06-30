@@ -78,7 +78,7 @@
           </div>
 
           <!-- 买家操作 -->
-          <div class="action-row" v-else-if="product.status === 'active'">
+          <div class="action-row" v-else-if="product.status === 'active' && !userStore.isAdmin">
             <el-button
               type="danger"
               size="large"

@@ -2,6 +2,9 @@
 <!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="order-list-page">
+    <el-button link class="back-btn" @click="$router.push('/')">
+      <el-icon><ArrowLeft /></el-icon>返回首页
+    </el-button>
     <h2>我的订单</h2>
     <el-tabs v-model="activeRole" @tab-click="fetchOrders">
       <el-tab-pane label="我是买家" name="buyer" />
@@ -73,6 +76,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
+import { ArrowLeft } from "@element-plus/icons-vue";
 import { getOrderList, updateOrderStatus, payOrder } from "@/api/orders";
 import { ElMessage, ElMessageBox } from "element-plus";
 

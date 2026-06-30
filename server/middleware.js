@@ -33,6 +33,12 @@ function authMiddleware(req, res, next) {
   try {
     const token = header.split(' ')[1];
     req.user = jwt.verify(token, JWT_SECRET);
+
+    const dbUser = require('./db').db.users.find((u) => u.id === req.user.id);
+    if (dbUser && dbUser.banned) {
+      return res.status(403).json({ message: '账号已被封禁' });
+    }
+
     next();
   } catch {
     return res.status(401).json({ message: '登录已过期，请重新登录' });

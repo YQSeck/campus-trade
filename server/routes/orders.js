@@ -20,6 +20,7 @@ router.post('/', authMiddleware, (req, res) => {
   const product = db.products.find((p) => p.id === productId && p.status === 'active');
   if (!product) return res.status(404).json({ message: '商品不存在或已下架' });
   if (product.sellerId === buyerId) return res.status(400).json({ message: '不能购买自己的商品' });
+  if (req.user.role === 'admin') return res.status(403).json({ message: '管理员不能购买商品' });
 
   const order = {
     id: genId('order'),
@@ -95,6 +96,21 @@ router.put('/:id/status', authMiddleware, (req, res) => {
 
   if (!validTransitions[order.status]?.includes(status)) {
     return res.status(400).json({ message: `不能从 ${order.status} 转为 ${status}` });
+  }
+
+  if (status === 'shipped' && order.sellerId !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ message: '只有卖家可以发货' });
+  }
+  if (status === 'received' && order.buyerId !== req.user.id && req.user.role !== 'admin') {
+    return res.status(403).json({ message: '只有买家可以确认收货' });
+  }
+  if (
+    status === 'cancelled' &&
+    order.buyerId !== req.user.id &&
+    order.sellerId !== req.user.id &&
+    req.user.role !== 'admin'
+  ) {
+    return res.status(403).json({ message: '只有买家或卖家可以取消订单' });
   }
 
   order.status = status;

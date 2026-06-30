@@ -2,6 +2,9 @@
 <!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="order-detail" v-loading="loading">
+    <el-button link class="back-btn" @click="$router.push('/orders')">
+      <el-icon><ArrowLeft /></el-icon>返回订单列表
+    </el-button>
     <h2>订单详情</h2>
     <el-descriptions v-if="order" :column="2" border>
       <el-descriptions-item label="订单号">{{ order.id }}</el-descriptions-item>
@@ -47,6 +50,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
+import { ArrowLeft } from "@element-plus/icons-vue";
 import { getOrderDetail } from "@/api/orders";
 import { createReview } from "@/api/reviews";
 import { ElMessage } from "element-plus";
