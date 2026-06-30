@@ -15,10 +15,12 @@
 | `npm run server` | Start Express backend on port 3000 |
 | `npm run dev` | Start Vite dev server (frontend, proxies `/api` → `localhost:3000`) |
 | `npm run build` | Build frontend for production |
+| `npm run preview` | Preview production build |
 | `npm run cli <subcommand>` | Run CLI admin tool (requires backend) |
-| `npm run test` | Run all tests |
+| `npm run test` | Run core tests (subset: pricing + orders) |
 | `npm run test:skill` | Run only skill pricing tests |
 | `npm run test:cli` | Run only CLI tests |
+| `npm run test:all` | Run all tests in `tests/` |
 | `npm run lint` | ESLint `.js,.vue` in `src/` |
 | `npm run format` | Prettier `src/` |
 
@@ -29,8 +31,11 @@
 ### Frontend (`src/`)
 - ES modules (`import`/`export`)
 - `src/main.js` → register Pinia → Router → ElementPlus
+- `@` alias resolves to `src/` (configured in `vite.config.js`)
 - `src/router/index.js` — routes auto-loaded from `src/router/modules/*.js` via `import.meta.glob` (eager); **never edit the routes array directly**
-- `src/store/userStore.js` — token persisted to localStorage, `userInfo` memory-only; `isAdmin` checks `role === 'admin'`
+- Router `beforeEach` guard reads `localStorage.getItem('user')` directly for admin role check (independent of the store)
+- `src/store/userStore.js` — token + user info persisted to localStorage (`localStorage.getItem/setItem('token')` and `'user'`); `isAdmin` checks `role === 'admin'`
+- `src/api/` — API call functions that all use `@/utils/request` (pre-configured Axios with auth interceptor)
 - `src/utils/request.js` — pre-configured Axios (`baseURL: '/api'`, auth interceptor); **always use this** for frontend API calls
 - `src/utils/image.js` — client-side image compression (canvas → base64)
 - `src/utils/account.js` — email/phone normalization and validation
