@@ -1,3 +1,14 @@
+/* 全局基础样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+body {
+  font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  background-color: #f5f7fa;
+}
+
 :root {
   --primary-color: #409eff;
   --success-color: #67c23a;

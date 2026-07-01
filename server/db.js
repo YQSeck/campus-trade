@@ -1,9 +1,6 @@
-// 【公共基础】统一内存数据库，供各模块共享
-// AI 生成：手动调整前请勿修改
 const { hashPassword } = require('./middleware');
 
 const db = {
-  // 模块一：用户系统
   users: [
     {
       id: 1,
@@ -57,7 +54,7 @@ const db = {
       createdAt: '2026-06-21T10:30:00.000Z',
     },
   ],
-  // 模块二：商品发布与管理
+
   products: [
     {
       id: 1,
@@ -150,7 +147,7 @@ const db = {
       createdAt: '2026-06-20T10:00:00.000Z',
     },
   ],
-  // 模块三：交易与订单
+
   orders: [
     {
       id: 1,
@@ -193,7 +190,7 @@ const db = {
       createdAt: '2026-06-23T10:00:00.000Z',
     },
   ],
-  // 模块三：交易与订单（商品留言）
+
   comments: [
     {
       id: 1,
@@ -214,9 +211,9 @@ const db = {
       createdAt: '2026-06-21T11:00:00.000Z',
     },
   ],
-  // 模块四：评价与信誉体系
+
   reviews: [],
-  // 模块五：后台管理（举报）
+
   reports: [
     {
       id: 1,
@@ -260,8 +257,8 @@ function enrichOrder(order) {
     sellerId: order.sellerId,
     buyerName: buyer ? buyer.nickname : '未知',
     sellerName: seller ? seller.nickname : '未知',
-    status,
     price: order.price,
+    status,
     createdAt: order.createdAt,
   };
 }

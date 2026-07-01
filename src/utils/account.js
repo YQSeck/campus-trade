@@ -1,13 +1,9 @@
-// 【模块一：用户系统】邮箱/手机号规范化与校验
-// AI 生成：手动调整前请勿修改
-
-/** 规范化登录账号（邮箱或手机号），去除空格、+86 前缀等 */
 export function normalizeAccount(value) {
-  if (value == null) return "";
+  if (value == null) return '';
   let v = String(value)
     .trim()
-    .replace(/[\s\-()]/g, "");
-  if (v.startsWith("+86")) {
+    .replace(/[\s\-()]/g, '');
+  if (v.startsWith('+86')) {
     v = v.slice(3);
   } else if (/^86\d{11}$/.test(v)) {
     v = v.slice(2);

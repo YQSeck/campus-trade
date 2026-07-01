@@ -15,10 +15,16 @@ export function login(data) {
   return request.post("/auth/login", data);
 }
 
-// 【模块一：用户系统】忘记密码
+// 【模块一：用户系统】忘记密码 - 获取验证码
 // POST /api/auth/forgot-password
 export function forgotPassword(data) {
   return request.post("/auth/forgot-password", data);
+}
+
+// 【模块一：用户系统】重置密码 - 验证码 + 新密码
+// POST /api/auth/reset-password
+export function resetPassword(data) {
+  return request.post("/auth/reset-password", data);
 }
 
 // 【模块一：用户系统】获取个人信息

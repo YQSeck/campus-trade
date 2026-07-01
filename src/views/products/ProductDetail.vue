@@ -1,5 +1,3 @@
-<!-- 【模块二/三】商品详情、留言、下单 -->
-<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="detail-page">
     <header class="top-bar">
@@ -16,7 +14,6 @@
 
     <main class="main-content" v-if="product">
       <div class="detail-card">
-        <!-- 图片 -->
         <div class="image-section">
           <div class="image-main">
             <img
@@ -24,15 +21,13 @@
               :src="product.images[currentImageIndex]"
               :alt="product.title"
               class="main-image"
+              @click="openPreview"
+              title="点击查看大图"
             />
             <div v-else class="no-image">暂无图片</div>
             <template v-if="(product.images?.length || 0) > 1">
-              <button class="img-arrow img-arrow-left" @click="prevImage">
-                ‹
-              </button>
-              <button class="img-arrow img-arrow-right" @click="nextImage">
-                ›
-              </button>
+              <button class="img-arrow img-arrow-left" @click="prevImage">‹</button>
+              <button class="img-arrow img-arrow-right" @click="nextImage">›</button>
             </template>
           </div>
           <div v-if="(product.images?.length || 0) > 1" class="image-thumbs">
@@ -47,7 +42,6 @@
           </div>
         </div>
 
-        <!-- 商品信息 -->
         <div class="info-section">
           <div class="info-header">
             <h1 class="product-title">{{ product.title }}</h1>
@@ -72,19 +66,15 @@
             </div>
           </div>
 
-          <!-- 卖家本人可编辑 -->
           <div class="action-row" v-if="canEdit">
             <el-button type="primary" @click="goEdit">编辑商品</el-button>
           </div>
 
-          <!-- 买家操作 -->
-          <div class="action-row" v-else-if="product.status === 'active' && product.sellerId !== userStore.user?.id">
-            <el-button
-              type="danger"
-              size="large"
-              :loading="ordering"
-              @click="handleWant"
-            >
+          <div
+            class="action-row"
+            v-else-if="product.status === 'active' && product.sellerId !== userStore.user?.id"
+          >
+            <el-button type="danger" size="large" :loading="ordering" @click="handleWant">
               我想要
             </el-button>
             <el-button plain @click="handleReport">举报</el-button>
@@ -94,25 +84,17 @@
             卖家联系方式：{{ product.sellerContact }}
           </div>
 
-          <!-- 商品描述 -->
           <div class="desc-section">
             <h3>商品描述</h3>
             <p class="desc-text">{{ product.description }}</p>
-            <p class="publish-time">
-              发布于 {{ formatDate(product.createdAt) }}
-            </p>
+            <p class="publish-time">发布于 {{ formatDate(product.createdAt) }}</p>
           </div>
         </div>
       </div>
 
-      <!-- 留言区域（成员B功能） -->
       <div class="comments-section">
         <h3>商品留言</h3>
-        <div
-          v-for="c in comments"
-          :key="c.id"
-          :class="['comment-item', { reply: c.parentId }]"
-        >
+        <div v-for="c in comments" :key="c.id" :class="['comment-item', { reply: c.parentId }]">
           <span class="user">{{ c.userNickname }}</span>
           <span v-if="c.parentId" class="reply-tag">回复</span>：
           <span>{{ c.content }}</span>
@@ -128,12 +110,7 @@
             clearable
             style="margin-top: 10px"
           />
-          <el-button
-            v-if="canReply"
-            size="small"
-            style="margin-top: 8px"
-            @click="replyToBuyer"
-          >
+          <el-button v-if="canReply" size="small" style="margin-top: 8px" @click="replyToBuyer">
             回复买家
           </el-button>
         </template>
@@ -145,19 +122,49 @@
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
       <p>加载中...</p>
     </div>
+
+    <!-- 图片全屏预览 -->
+    <Teleport to="body">
+      <div
+        v-if="previewVisible"
+        class="image-preview-overlay"
+        @click="closePreview"
+      >
+        <div class="preview-close" @click="closePreview">✕</div>
+        <img
+          :src="product?.images?.[previewIndex] || ''"
+          :alt="product?.title"
+          class="preview-image"
+          @click.stop
+        />
+        <button
+          v-if="product?.images?.length > 1"
+          class="preview-arrow preview-arrow-left"
+          @click.stop="previewPrev"
+        >‹</button>
+        <button
+          v-if="product?.images?.length > 1"
+          class="preview-arrow preview-arrow-right"
+          @click.stop="previewNext"
+        >›</button>
+        <div v-if="product?.images?.length > 1" class="preview-counter">
+          {{ previewIndex + 1 }} / {{ product.images.length }}
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { ElMessage, ElMessageBox } from "element-plus";
-import { ArrowLeft, UserFilled, Loading } from "@element-plus/icons-vue";
-import { useUserStore } from "@/store/userStore";
-import { getProductDetail } from "@/api/product";
-import { getComments, addComment } from "@/api/comments";
-import { createOrder } from "@/api/orders";
-import request from "@/utils/request";
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { ArrowLeft, UserFilled, Loading } from '@element-plus/icons-vue';
+import { useUserStore } from '@/store/userStore';
+import { getProductDetail } from '@/api/product';
+import { getComments, addComment } from '@/api/comments';
+import { createOrder } from '@/api/orders';
+import request from '@/utils/request';
 
 const route = useRoute();
 const router = useRouter();
@@ -165,21 +172,41 @@ const userStore = useUserStore();
 
 const product = ref(null);
 const currentImageIndex = ref(0);
+const previewVisible = ref(false);
+const previewIndex = ref(0);
+
+function openPreview() {
+  previewIndex.value = currentImageIndex.value;
+  previewVisible.value = true;
+}
+function closePreview() {
+  previewVisible.value = false;
+}
+function previewPrev() {
+  if (!product.value?.images) return;
+  previewIndex.value =
+    (previewIndex.value - 1 + product.value.images.length) %
+    product.value.images.length;
+}
+function previewNext() {
+  if (!product.value?.images) return;
+  previewIndex.value =
+    (previewIndex.value + 1) % product.value.images.length;
+}
+
 const comments = ref([]);
-const newComment = ref("");
+const newComment = ref('');
 const ordering = ref(false);
 const replyParentId = ref(null);
 
 function prevImage() {
   if (!product.value?.images) return;
   currentImageIndex.value =
-    (currentImageIndex.value - 1 + product.value.images.length) %
-    product.value.images.length;
+    (currentImageIndex.value - 1 + product.value.images.length) % product.value.images.length;
 }
 function nextImage() {
   if (!product.value?.images) return;
-  currentImageIndex.value =
-    (currentImageIndex.value + 1) % product.value.images.length;
+  currentImageIndex.value = (currentImageIndex.value + 1) % product.value.images.length;
 }
 
 const canEdit = computed(() => {
@@ -193,14 +220,14 @@ const canReply = computed(() => {
 });
 
 function formatDate(dateStr) {
-  if (!dateStr) return "";
+  if (!dateStr) return '';
   const d = new Date(dateStr);
   const now = new Date();
   const diff = now - d;
-  if (diff < 60000) return "刚刚";
+  if (diff < 60000) return '刚刚';
   if (diff < 3600000) return `${Math.floor(diff / 60000)}分钟前`;
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}小时前`;
-  return d.toLocaleDateString("zh-CN");
+  return d.toLocaleDateString('zh-CN');
 }
 
 async function fetchDetail() {
@@ -208,8 +235,8 @@ async function fetchDetail() {
     const res = await getProductDetail(route.params.id);
     product.value = res.data.product;
   } catch (error) {
-    ElMessage.error("商品不存在或已删除");
-    router.push("/");
+    ElMessage.error('商品不存在或已删除');
+    router.push('/');
   }
 }
 
@@ -225,10 +252,10 @@ async function handleWant() {
   ordering.value = true;
   try {
     const { data } = await createOrder(product.value.id);
-    ElMessage.success("订单已创建，请前往付款");
+    ElMessage.success('订单已创建，请前往付款');
     router.push(`/orders/${data.order.id}`);
   } catch (e) {
-    ElMessage.error(e.response?.data?.message || "下单失败");
+    ElMessage.error(e.response?.data?.message || '下单失败');
   } finally {
     ordering.value = false;
   }
@@ -240,20 +267,20 @@ async function handleReport() {
     return;
   }
   try {
-    const { value } = await ElMessageBox.prompt("请描述举报原因", "举报商品", {
-      confirmButtonText: "提交",
-      cancelButtonText: "取消",
+    const { value } = await ElMessageBox.prompt('请描述举报原因', '举报商品', {
+      confirmButtonText: '提交',
+      cancelButtonText: '取消',
     });
     if (!value?.trim()) return;
-    await request.post("/reports", {
-      targetType: "product",
+    await request.post('/reports', {
+      targetType: 'product',
       targetId: product.value.id,
       reason: value.trim(),
     });
-    ElMessage.success("举报已提交");
+    ElMessage.success('举报已提交');
   } catch (e) {
-    if (e !== "cancel") {
-      ElMessage.error(e.response?.data?.message || "举报失败");
+    if (e !== 'cancel') {
+      ElMessage.error(e.response?.data?.message || '举报失败');
     }
   }
 }
@@ -264,18 +291,17 @@ function replyToBuyer() {
     .find((c) => c.userId !== product.value.sellerId);
   replyParentId.value = lastBuyerComment ? lastBuyerComment.id : null;
   if (!newComment.value) {
-    newComment.value = "";
+    newComment.value = '';
   }
-  ElMessage.info("请在输入框中填写回复内容后回车发送");
+  ElMessage.info('请在输入框中填写回复内容后回车发送');
 }
 
-// ---------- 留言功能 ----------
 async function fetchComments() {
   try {
     const { data } = await getComments(route.params.id, { page: 1, limit: 50 });
     comments.value = data.comments;
   } catch (e) {
-    ElMessage.error("加载留言失败");
+    ElMessage.error('加载留言失败');
   }
 }
 
@@ -286,16 +312,12 @@ async function postComment() {
   }
   if (!newComment.value.trim()) return;
   try {
-    await addComment(
-      route.params.id,
-      newComment.value.trim(),
-      replyParentId.value,
-    );
-    newComment.value = "";
+    await addComment(route.params.id, newComment.value.trim(), replyParentId.value);
+    newComment.value = '';
     replyParentId.value = null;
     fetchComments();
   } catch (e) {
-    ElMessage.error("发送留言失败");
+    ElMessage.error('发送留言失败');
   }
 }
 
@@ -306,7 +328,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* 原有详情页样式（成员A） */
 .detail-page {
   min-height: 100vh;
   background: var(--bg-color);
@@ -537,7 +558,6 @@ onMounted(() => {
   color: var(--text-secondary);
 }
 
-/* 留言区域样式（成员B） */
 .comments-section {
   margin-top: 30px;
   padding: 20px;
@@ -577,5 +597,81 @@ onMounted(() => {
 .no-comments {
   color: var(--text-secondary);
   font-size: 14px;
+}
+</style>
+<style>
+.image-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
+}
+.preview-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  color: #fff;
+  font-size: 32px;
+  cursor: pointer;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.2s;
+}
+.preview-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.preview-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  cursor: default;
+  border-radius: 4px;
+}
+.preview-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.preview-arrow:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.preview-arrow-left {
+  left: 20px;
+}
+.preview-arrow-right {
+  right: 20px;
+}
+.preview-counter {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 16px;
+  border-radius: 20px;
 }
 </style>

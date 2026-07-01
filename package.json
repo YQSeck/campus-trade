@@ -13,11 +13,14 @@
     "test": "node --test tests/module8-skill/pricingData.test.js tests/module8-skill/pricing.test.js tests/module7-cli/orders.test.js",
     "test:skill": "node --test tests/module8-skill/**/*.test.js",
     "test:cli": "node --test tests/module7-cli/**/*.test.js",
+    "test:auth": "node --test tests/module1-auth/**/*.test.js",
+    "test:product": "node --test tests/module2-products/**/*.test.js",
     "test:all": "node --test tests/**/*.test.js"
   },
   "dependencies": {
     "@element-plus/icons-vue": "^2.3.2",
     "axios": "^1.7.0",
+    "bcrypt": "^6.0.0",
     "chalk": "^4.1.2",
     "commander": "^11.0.0",
     "cors": "^2.8.6",

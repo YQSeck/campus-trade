@@ -1,5 +1,5 @@
-// 【模块八：开放 Skill】定价数据单元测试
-// AI 生成：手动调整前请勿修改
+
+
 var { describe, it } = require('node:test');
 var assert = require('node:assert/strict');
 var pricingData = require('../../src/skills/pricingData');

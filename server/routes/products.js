@@ -1,13 +1,23 @@
-// 【模块二：商品发布与管理】商品 CRUD、搜索筛选
-// AI 生成：手动调整前请勿修改
+// AI 生成，手动调整：加权搜索、keyword/sort 参数、admin 禁发商品、集中式 genId
+
 const express = require('express');
-const { db } = require('../db');
+const { db, genId } = require('../db');
 const { authMiddleware } = require('../middleware');
 
 const router = express.Router();
 
 router.get('/', (req, res) => {
-  const { page = 1, limit = 10, search, category, priceOrder, minPrice, maxPrice, status, mine } = req.query;
+  const {
+    page = 1,
+    limit = 10,
+    keyword,
+    category,
+    sort,
+    minPrice,
+    maxPrice,
+    status,
+    mine,
+  } = req.query;
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
 
@@ -33,11 +43,16 @@ router.get('/', (req, res) => {
     filtered = filtered.filter((p) => p.status === 'active');
   }
 
-  if (search) {
-    const kw = search.toLowerCase();
-    filtered = filtered.filter(
-      (p) => p.title.toLowerCase().includes(kw) || p.description.toLowerCase().includes(kw)
-    );
+  if (keyword) {
+    const kw = keyword.toLowerCase();
+    filtered = filtered
+      .map((p) => {
+        const titleMatches = (p.title.toLowerCase().match(new RegExp(kw, 'g')) || []).length;
+        const descMatches = (p.description.toLowerCase().match(new RegExp(kw, 'g')) || []).length;
+        const score = titleMatches * 2 + descMatches * 1;
+        return { ...p, _score: score };
+      })
+      .filter((p) => p._score > 0);
   }
 
   if (category) {
@@ -52,19 +67,25 @@ router.get('/', (req, res) => {
     filtered = filtered.filter((p) => p.price <= parseFloat(maxPrice));
   }
 
-  if (priceOrder === 'asc') {
+  if (sort === 'price_asc') {
     filtered.sort((a, b) => a.price - b.price);
-  } else if (priceOrder === 'desc') {
+  } else if (sort === 'price_desc') {
     filtered.sort((a, b) => b.price - a.price);
+  } else if (sort === 'newest') {
+    filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } else if (sort === 'popular') {
+    filtered.sort((a, b) => a.condition - b.condition);
+  } else if (keyword) {
+    filtered.sort((a, b) => b._score - a._score);
   }
 
   const total = filtered.length;
   const start = (pageNum - 1) * limitNum;
   const pagedProducts = filtered.slice(start, start + limitNum);
 
-  res.json({ products: pagedProducts, total, page: pageNum, limit: limitNum });
+  const cleanProducts = pagedProducts.map(({ _score, ...p }) => p);
+  res.json({ products: cleanProducts, total, page: pageNum, limit: limitNum });
 });
-
 router.get('/:id', (req, res) => {
   const id = parseInt(req.params.id);
   const product = db.products.find((p) => p.id === id);
@@ -83,6 +104,9 @@ router.get('/:id', (req, res) => {
 });
 
 router.post('/', authMiddleware, (req, res) => {
+  if (req.user.role === 'admin') {
+    return res.status(403).json({ message: '管理员不可发布商品' });
+  }
   const { title, description, category, price, originalPrice, condition, images } = req.body;
   if (!title || !description || !category || price == null) {
     return res.status(400).json({ message: '标题、描述、分类、价格为必填项' });
@@ -92,7 +116,7 @@ router.post('/', authMiddleware, (req, res) => {
   const seller = db.users.find((u) => u.id === sellerId);
 
   const newProduct = {
-    id: Math.max(...db.products.map((p) => p.id), 0) + 1,
+    id: genId('product'),
     title,
     description,
     category,
@@ -118,7 +142,8 @@ router.put('/:id', authMiddleware, (req, res) => {
     return res.status(403).json({ message: '无权操作该商品' });
   }
 
-  const { title, description, category, price, originalPrice, condition, images, status } = req.body;
+  const { title, description, category, price, originalPrice, condition, images, status } =
+    req.body;
 
   if (status) {
     if (!['active', 'removed'].includes(status)) {
@@ -144,6 +169,7 @@ router.delete('/:id', authMiddleware, (req, res) => {
   if (db.products[idx].sellerId !== req.user.id && req.user.role !== 'admin') {
     return res.status(403).json({ message: '无权操作该商品' });
   }
+  // 逻辑删除：标记为 deleted，保留数据
   db.products[idx].status = 'deleted';
   res.json({ message: '商品已删除' });
 });

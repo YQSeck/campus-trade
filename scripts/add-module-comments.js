@@ -1,4 +1,4 @@
-// 【公共基础】批量添加模块归属注释脚本（一次性工具）
+
 const fs = require('fs');
 const path = require('path');
 

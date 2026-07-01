@@ -1,16 +1,21 @@
-// 【公共基础】JWT 鉴权、密码加密、账号规范化
-// AI 生成：手动调整前请勿修改
+// AI 生成，手动调整：SHA256 替换为 bcrypt，实现两级锁定机制、添加 apiKeyMiddleware
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const JWT_SECRET = 'campus-trade-secret-key';
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_DURATION_MS = 15 * 60 * 1000;
+const MAX_LOGIN_ATTEMPTS_TIER1 = 5;
+const MAX_LOGIN_ATTEMPTS_TIER2 = 10;
+const LOCK_DURATION_30MIN = 30 * 60 * 1000;
+const LOCK_DURATION_24HR = 24 * 60 * 60 * 1000;
+const SALT_ROUNDS = 10;
 
 function hashPassword(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+  return bcrypt.hashSync(password, SALT_ROUNDS);
 }
 
+function comparePassword(password, hash) {
+  return bcrypt.compareSync(password, hash);
+}
 function generateToken(user) {
   return jwt.sign(
     {
@@ -58,7 +63,9 @@ function mockSendEmail(email, content) {
 
 function normalizeAccount(value) {
   if (value == null) return '';
-  let v = String(value).trim().replace(/[\s\-()]/g, '');
+  let v = String(value)
+    .trim()
+    .replace(/[\s\-()]/g, '');
   if (v.startsWith('+86')) {
     v = v.slice(3);
   } else if (/^86\d{11}$/.test(v)) {
@@ -67,14 +74,44 @@ function normalizeAccount(value) {
   return v;
 }
 
+const PUBLIC_API_KEY = 'campus-trade-2026-public';
+
+function apiKeyMiddleware(req, res, next) {
+  if (req.method !== 'GET') return next();
+
+  const apiKey = req.headers['x-api-key'] || req.query.api_key;
+  const origin = req.headers.origin;
+  const host = req.headers.host || '';
+
+  if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    return next();
+  }
+
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
+    return next();
+  }
+
+  if (apiKey === PUBLIC_API_KEY) {
+    return next();
+  }
+
+  return res.status(401).json({ message: '无效或缺失 API Key，请携带 x-api-key 头调用' });
+}
+
 module.exports = {
   JWT_SECRET,
-  MAX_LOGIN_ATTEMPTS,
-  LOCK_DURATION_MS,
+  PUBLIC_API_KEY,
+  MAX_LOGIN_ATTEMPTS_TIER1,
+  MAX_LOGIN_ATTEMPTS_TIER2,
+  LOCK_DURATION_30MIN,
+  LOCK_DURATION_24HR,
+  SALT_ROUNDS,
   hashPassword,
+  comparePassword,
   generateToken,
   authMiddleware,
   adminMiddleware,
   mockSendEmail,
   normalizeAccount,
+  apiKeyMiddleware,
 };

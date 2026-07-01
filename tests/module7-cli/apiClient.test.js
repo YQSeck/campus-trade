@@ -1,13 +1,12 @@
-// 【模块七：CLI】apiClient 单元测试
-// AI 生成：手动调整前请勿修改
+
+
 var { describe, it, before, after, beforeEach } = require('node:test');
 var assert = require('node:assert/strict');
 var fs = require('fs');
 var path = require('path');
 var os = require('os');
 
-// apiClient 在 require 时会读取 TRADE_TOKEN 和 config 文件
-// 测试需要隔离环境
+
 var originalToken = process.env.TRADE_TOKEN;
 var originalApiUrl = process.env.TRADE_API_URL;
 var configFile = path.join(os.homedir(), '.trade-cli', 'config.json');
@@ -72,7 +71,7 @@ describe('apiClient - token 加载', function() {
     process.env.TRADE_TOKEN = '';
     delete require.cache[require.resolve('../../cli/apiClient')];
     var client = require('../../cli/apiClient');
-    client.setToken = function() {}; // 避免写入文件
+    client.setToken = function() {};
     var testConfig = { headers: {} };
     var result = client.interceptors.request.handlers[0].fulfilled(testConfig);
     assert.strictEqual(result.headers.Authorization, undefined);

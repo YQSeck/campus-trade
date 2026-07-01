@@ -1,5 +1,3 @@
-// 【模块一/四/五/七】用户信誉、封禁解封（CLI 兼容）
-// AI 生成：手动调整前请勿修改
 const express = require('express');
 const { db } = require('../db');
 const { authMiddleware, adminMiddleware } = require('../middleware');

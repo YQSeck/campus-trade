@@ -1,14 +1,16 @@
-// 【模块一：用户系统】注册、登录、忘记密码、个人信息、密码修改
-// AI 生成：手动调整前请勿修改
+// AI 生成，手动调整：bcrypt 密码比较、两级锁定、验证码找回密码
 const express = require('express');
 const { db, genId } = require('../db');
 const {
   hashPassword,
+  comparePassword,
   generateToken,
   authMiddleware,
   mockSendEmail,
-  MAX_LOGIN_ATTEMPTS,
-  LOCK_DURATION_MS,
+  MAX_LOGIN_ATTEMPTS_TIER1,
+  MAX_LOGIN_ATTEMPTS_TIER2,
+  LOCK_DURATION_30MIN,
+  LOCK_DURATION_24HR,
   normalizeAccount,
 } = require('../middleware');
 
@@ -58,7 +60,7 @@ router.post('/register', (req, res) => {
     contact: '',
     contactVisible: true,
     role: 'user',
-    reputationScore: 100,
+    reputationScore: 50,
     banned: false,
     lockedUntil: null,
     loginAttempts: 0,
@@ -92,14 +94,19 @@ router.post('/login', (req, res) => {
     return res.status(403).json({ message: `账号已被锁定，请 ${remaining} 分钟后再试` });
   }
 
-  if (user.password !== hashPassword(password)) {
+  if (!comparePassword(password, user.password)) {
     user.loginAttempts = (user.loginAttempts || 0) + 1;
-    if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-      user.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS).toISOString();
-      user.loginAttempts = 0;
-      return res.status(403).json({ message: '密码错误次数过多，账号已被锁定15分钟' });
+    if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS_TIER2) {
+      user.lockedUntil = new Date(Date.now() + LOCK_DURATION_24HR).toISOString();
+      return res
+        .status(403)
+        .json({ message: '密码错误次数过多，账号已被锁定24小时，请联系管理员解封' });
     }
-    const remaining = MAX_LOGIN_ATTEMPTS - user.loginAttempts;
+    if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS_TIER1) {
+      user.lockedUntil = new Date(Date.now() + LOCK_DURATION_30MIN).toISOString();
+      return res.status(403).json({ message: '密码错误次数过多，账号已被锁定30分钟' });
+    }
+    const remaining = MAX_LOGIN_ATTEMPTS_TIER1 - user.loginAttempts;
     return res.status(401).json({ message: `邮箱/手机号或密码错误，还剩 ${remaining} 次尝试机会` });
   }
 
@@ -124,6 +131,9 @@ router.post('/login', (req, res) => {
   });
 });
 
+// 验证码存储：{ email/phone: { code, expiresAt } }
+const resetCodes = new Map();
+
 router.post('/forgot-password', (req, res) => {
   const account = normalizeAccount(req.body.email);
 
@@ -137,14 +147,53 @@ router.post('/forgot-password', (req, res) => {
     return res.status(404).json({ message: '该账号未注册' });
   }
 
-  const newPassword = Math.random().toString(36).slice(-8);
+  // 生成6位数字验证码，10分钟有效
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  resetCodes.set(account, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+  const target = user.email || user.phone;
+  mockSendEmail(target, `您的验证码是 ${code}（10分钟内有效）`);
+  console.log(`[忘记密码] ${target} 的验证码: ${code}`);
+
+  // 不修改原密码，只返回验证码已发送
+  res.json({ message: '验证码已发送至邮箱/手机，请在10分钟内完成验证' });
+});
+
+router.post('/reset-password', (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ message: '请填写完整信息（邮箱、验证码、新密码）' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: '新密码长度不能少于6位' });
+  }
+
+  const account = normalizeAccount(email);
+  const stored = resetCodes.get(account);
+
+  // 校验验证码
+  if (!stored) {
+    return res.status(400).json({ message: '未发送验证码或验证码已失效，请重新获取' });
+  }
+  if (Date.now() > stored.expiresAt) {
+    resetCodes.delete(account);
+    return res.status(400).json({ message: '验证码已过期（有效期为10分钟），请重新获取' });
+  }
+  if (stored.code !== code) {
+    return res.status(400).json({ message: '验证码错误' });
+  }
+
+  // 验证通过，更新密码
+  const isEmailAccount = account.includes('@');
+  const user = db.users.find((u) => (isEmailAccount ? u.email === account : u.phone === account));
   user.password = hashPassword(newPassword);
   user.loginAttempts = 0;
   user.lockedUntil = null;
-  const target = user.email || user.phone;
-  mockSendEmail(target, `您的新密码是 ${newPassword}`);
+  resetCodes.delete(account);
 
-  res.json({ message: '新密码已发送至邮箱/手机' });
+  res.json({ message: '密码重置成功，请使用新密码登录' });
 });
 
 const userRoutes = express.Router();
@@ -200,7 +249,7 @@ userRoutes.put('/password', authMiddleware, (req, res) => {
   if (!oldPassword || !newPassword) {
     return res.status(400).json({ message: '请输入当前密码和新密码' });
   }
-  if (user.password !== hashPassword(oldPassword)) {
+  if (!comparePassword(oldPassword, user.password)) {
     return res.status(400).json({ message: '当前密码错误' });
   }
   if (newPassword.length < 6) {

@@ -1,6 +1,4 @@
-// 【模块八：开放 Skill】自动定价引擎
-// AI 生成：手动调整前请勿修改
-var pricingData = require("./pricingData");
+var pricingData = require('./pricingData');
 
 function recommend(input) {
   var category = input.category;
@@ -9,14 +7,10 @@ function recommend(input) {
   var marketPrices = input.marketPrices;
 
   if (!category || !pricingData.isValidCategory(category)) {
-    return errorResult(
-      "无效分类，可选值：" + pricingData.validCategories.join("、"),
-    );
+    return errorResult('无效分类，可选值：' + pricingData.validCategories.join('、'));
   }
   if (!condition || !pricingData.isValidCondition(condition)) {
-    return errorResult(
-      "无效成色，可选值：" + pricingData.validConditions.join("、"),
-    );
+    return errorResult('无效成色，可选值：' + pricingData.validConditions.join('、'));
   }
 
   var categoryRate = pricingData.getCategoryBaseRate(category);
@@ -44,45 +38,39 @@ function recommend(input) {
 
   reasoningParts.push(
     category +
-      "类二手基准折扣率约" +
+      '类二手基准折扣率约' +
       Math.round(categoryRate * 100) +
-      "%（" +
+      '%（' +
       pricingData.categoryDescriptions[category] +
-      "）",
+      '）'
   );
-  reasoningParts.push(
-    condition + "折旧因子为" + Math.round(conditionFactor * 100) + "%",
-  );
+  reasoningParts.push(condition + '折旧因子为' + Math.round(conditionFactor * 100) + '%');
 
   if (basePrice !== null && marketAvg !== null) {
-    suggestedPrice =
-      Math.round((basePrice * 0.6 + marketAvg * 0.4) * 100) / 100;
+    suggestedPrice = Math.round((basePrice * 0.6 + marketAvg * 0.4) * 100) / 100;
     confidence = 0.85;
     reasoningParts.push(
-      "结合原价计算（¥" +
+      '结合原价计算（¥' +
         basePrice.toFixed(2) +
-        "）与市场参考均价（¥" +
+        '）与市场参考均价（¥' +
         marketAvg.toFixed(2) +
-        "），按6:4加权",
+        '），按6:4加权'
     );
   } else if (basePrice !== null) {
     suggestedPrice = basePrice;
     confidence = 0.6;
-    reasoningParts.push("仅基于原价和折旧模型计算，无市场参考数据");
+    reasoningParts.push('仅基于原价和折旧模型计算，无市场参考数据');
   } else if (marketAvg !== null) {
     suggestedPrice = marketAvg;
     confidence = 0.5;
-    reasoningParts.push("仅基于市场参考均价，无原价信息");
+    reasoningParts.push('仅基于市场参考均价，无原价信息');
   } else {
     suggestedPrice = categoryRate * conditionFactor * 100;
     confidence = 0.2;
-    reasoningParts.push("无原价和市场参考，仅给出归一化指数");
+    reasoningParts.push('无原价和市场参考，仅给出归一化指数');
   }
 
-  var margin = Math.max(
-    1,
-    Math.round(suggestedPrice * (1 - confidence) * 0.2 * 100) / 100,
-  );
+  var margin = Math.max(1, Math.round(suggestedPrice * (1 - confidence) * 0.2 * 100) / 100);
   priceRange = {
     min: Math.max(0, Math.round((suggestedPrice - margin) * 100) / 100),
     max: Math.round((suggestedPrice + margin) * 100) / 100,
@@ -93,7 +81,7 @@ function recommend(input) {
     suggestedPrice,
     priceRange,
     confidence,
-    reasoning: reasoningParts.join("。"),
+    reasoning: reasoningParts.join('。'),
     breakdown: {
       categoryBaseRate: categoryRate,
       conditionFactor,

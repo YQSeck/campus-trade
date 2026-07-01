@@ -1,5 +1,5 @@
-// 【模块三：交易与订单】下单、支付、发货、收货
-// AI 生成：手动调整前请勿修改
+// AI 生成，手动调整：paid 超时自动取消、normalizeStatusFilter、修正 enrichOrder 引用
+
 const express = require('express');
 const { db, genId, enrichOrder } = require('../db');
 const { authMiddleware } = require('../middleware');
@@ -9,6 +9,16 @@ const router = express.Router();
 function normalizeStatusFilter(status) {
   if (status === 'completed') return 'received';
   return status;
+}
+
+function cancelExpiredPaidOrders() {
+  const now = Date.now();
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+  db.orders.forEach((order) => {
+    if (order.status === 'paid' && now - new Date(order.createdAt).getTime() > twentyFourHours) {
+      order.status = 'cancelled';
+    }
+  });
 }
 
 router.post('/', authMiddleware, (req, res) => {
@@ -37,9 +47,9 @@ router.post('/', authMiddleware, (req, res) => {
 });
 
 router.get('/', authMiddleware, (req, res) => {
+  cancelExpiredPaidOrders();
   const userId = req.user.id;
   const { role, status, page = 1, limit = 10 } = req.query;
-  const statusFilter = status ? normalizeStatusFilter(status) : '';
 
   let filtered = db.orders;
   if (req.user.role === 'admin' && !role) {
@@ -52,8 +62,9 @@ router.get('/', authMiddleware, (req, res) => {
     filtered = filtered.filter((o) => o.buyerId === userId || o.sellerId === userId);
   }
 
-  if (statusFilter) {
-    filtered = filtered.filter((o) => o.status === statusFilter);
+  if (status) {
+    const dbStatus = normalizeStatusFilter(status);
+    filtered = filtered.filter((o) => o.status === dbStatus);
   }
 
   const total = filtered.length;
@@ -62,7 +73,6 @@ router.get('/', authMiddleware, (req, res) => {
 
   res.json({ orders: items, total, page: parseInt(page), limit: parseInt(limit) });
 });
-
 router.get('/:id', authMiddleware, (req, res) => {
   const id = parseInt(req.params.id);
   const order = db.orders.find((o) => o.id === id);

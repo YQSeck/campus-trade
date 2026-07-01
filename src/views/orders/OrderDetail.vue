@@ -1,5 +1,3 @@
-<!-- 【模块三/四】订单详情与评价 -->
-<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="order-detail" v-loading="loading">
     <el-button link class="back-btn" @click="$router.push('/orders')">
@@ -8,12 +6,8 @@
     <h2>订单详情</h2>
     <el-descriptions v-if="order" :column="2" border>
       <el-descriptions-item label="订单号">{{ order.id }}</el-descriptions-item>
-      <el-descriptions-item label="商品">{{
-        order.productTitle
-      }}</el-descriptions-item>
-      <el-descriptions-item label="金额"
-        >¥{{ order.price }}</el-descriptions-item
-      >
+      <el-descriptions-item label="商品">{{ order.productTitle }}</el-descriptions-item>
+      <el-descriptions-item label="金额">¥{{ order.price }}</el-descriptions-item>
       <el-descriptions-item label="状态">
         <el-tag>{{ statusMap[order.status] }}</el-tag>
       </el-descriptions-item>
@@ -32,11 +26,7 @@
         rows="3"
         style="margin-top: 10px"
       />
-      <el-button
-        type="primary"
-        @click="submitReview"
-        :loading="submitting"
-        style="margin-top: 10px"
+      <el-button type="primary" @click="submitReview" :loading="submitting" style="margin-top: 10px"
         >提交评价</el-button
       >
     </div>
@@ -48,38 +38,38 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
-import { ArrowLeft } from "@element-plus/icons-vue";
-import { getOrderDetail } from "@/api/orders";
-import { createReview } from "@/api/reviews";
-import { ElMessage } from "element-plus";
-import { useUserStore } from "@/store/userStore";
+import { ref, computed, onMounted } from 'vue';
+import { useRoute } from 'vue-router';
+import { ArrowLeft } from '@element-plus/icons-vue';
+import { getOrderDetail } from '@/api/orders';
+import { createReview } from '@/api/reviews';
+import { ElMessage } from 'element-plus';
+import { useUserStore } from '@/store/userStore';
 
 const route = useRoute();
 const userStore = useUserStore();
 const order = ref(null);
 const loading = ref(false);
 const reviewRating = ref(5);
-const reviewContent = ref("");
+const reviewContent = ref('');
 const submitting = ref(false);
 const alreadyReviewed = ref(false);
 
 const currentUserId = computed(() => userStore.user?.id);
 
 const statusMap = {
-  pending: "待付款",
-  paid: "待发货",
-  shipped: "待收货",
-  received: "已完成",
-  completed: "已完成",
-  cancelled: "已取消",
+  pending: '待付款',
+  paid: '待发货',
+  shipped: '待收货',
+  received: '已完成',
+  completed: '已完成',
+  cancelled: '已取消',
 };
 
 const showReviewForm = computed(() => {
   return (
     order.value &&
-    order.value.status === "completed" &&
+    order.value.status === 'completed' &&
     order.value.buyerId === currentUserId.value &&
     !alreadyReviewed.value
   );
@@ -91,7 +81,7 @@ async function fetchOrder() {
     const { data } = await getOrderDetail(route.params.id);
     order.value = data.order;
   } catch (e) {
-    ElMessage.error("加载订单失败");
+    ElMessage.error('加载订单失败');
   } finally {
     loading.value = false;
   }
@@ -105,10 +95,10 @@ async function submitReview() {
       rating: reviewRating.value,
       content: reviewContent.value,
     });
-    ElMessage.success("评价成功");
+    ElMessage.success('评价成功');
     alreadyReviewed.value = true;
   } catch (e) {
-    ElMessage.error(e.response?.data?.message || "评价失败");
+    ElMessage.error(e.response?.data?.message || '评价失败');
   } finally {
     submitting.value = false;
   }

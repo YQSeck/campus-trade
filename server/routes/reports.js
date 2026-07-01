@@ -1,5 +1,3 @@
-// 【模块五：后台管理】用户提交举报
-// AI 生成：手动调整前请勿修改
 const express = require('express');
 const { db, genId } = require('../db');
 const { authMiddleware } = require('../middleware');

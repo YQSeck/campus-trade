@@ -1,5 +1,3 @@
-<!-- 【模块二：商品发布与管理】发布/编辑商品 -->
-<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="publish-page">
     <header class="top-bar">
@@ -8,7 +6,7 @@
           <el-button link @click="$router.back()">
             <el-icon><ArrowLeft /></el-icon>返回
           </el-button>
-          <h1 class="page-title">{{ isEdit ? "编辑商品" : "发布商品" }}</h1>
+          <h1 class="page-title">{{ isEdit ? '编辑商品' : '发布商品' }}</h1>
         </div>
       </div>
     </header>
@@ -22,7 +20,6 @@
           label-width="100px"
           label-position="left"
         >
-          <!-- 标题 -->
           <el-form-item label="商品标题" prop="title">
             <el-input
               v-model="form.title"
@@ -33,7 +30,6 @@
             />
           </el-form-item>
 
-          <!-- 分类 -->
           <el-form-item label="分类" prop="category">
             <el-select
               v-model="form.category"
@@ -41,16 +37,10 @@
               size="large"
               class="full-width"
             >
-              <el-option
-                v-for="cat in categories"
-                :key="cat"
-                :label="cat"
-                :value="cat"
-              />
+              <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
             </el-select>
           </el-form-item>
 
-          <!-- 描述 -->
           <el-form-item label="详细描述" prop="description">
             <el-input
               v-model="form.description"
@@ -62,7 +52,6 @@
             />
           </el-form-item>
 
-          <!-- 价格 & 原价 -->
           <el-row :gutter="20">
             <el-col :span="12">
               <el-form-item label="售价" prop="price">
@@ -90,7 +79,6 @@
             </el-col>
           </el-row>
 
-          <!-- 成色 -->
           <el-form-item label="成色">
             <div class="condition-wrap">
               <el-slider
@@ -104,15 +92,9 @@
             </div>
           </el-form-item>
 
-          <!-- 本地图片上传 -->
           <el-form-item label="商品图片">
             <div class="images-section">
-              <!-- 已选图片预览 -->
-              <div
-                v-for="(img, idx) in form.images"
-                :key="idx"
-                class="image-item"
-              >
+              <div v-for="(img, idx) in form.images" :key="idx" class="image-item">
                 <img :src="img" alt="商品图片" class="preview-img" />
                 <el-button
                   type="danger"
@@ -123,12 +105,8 @@
                   @click="removeImage(idx)"
                 />
               </div>
-              <!-- 添加按钮 -->
-              <div
-                v-if="form.images.length < 6"
-                class="add-image-box"
-                @click="openFilePicker"
-              >
+
+              <div v-if="form.images.length < 9" class="add-image-box" @click="openFilePicker">
                 <el-icon :size="28"><Plus /></el-icon>
                 <span>添加图片</span>
               </div>
@@ -141,22 +119,14 @@
               @change="handleFileChange"
             />
             <p class="upload-tip">
-              支持 JPG/PNG/GIF，单张自动压缩至 2MB 以内，最多 6 张
-              <span v-if="imageProcessing" style="color: var(--primary-color)">
-                处理中...</span
-              >
+              支持 JPG/PNG/WEBP，单图最大 5MB，最多 9 张
+              <span v-if="imageProcessing" style="color: var(--primary-color)"> 处理中...</span>
             </p>
           </el-form-item>
 
-          <!-- 提交按钮 -->
           <el-form-item>
-            <el-button
-              type="primary"
-              size="large"
-              :loading="submitting"
-              @click="handleSubmit"
-            >
-              {{ submitting ? "提交中..." : isEdit ? "保存修改" : "发布商品" }}
+            <el-button type="primary" size="large" :loading="submitting" @click="handleSubmit">
+              {{ submitting ? '提交中...' : isEdit ? '保存修改' : '发布商品' }}
             </el-button>
             <el-button size="large" @click="$router.back()">取消</el-button>
           </el-form-item>
@@ -167,14 +137,14 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from "vue";
-import { useRoute, useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
-import { ArrowLeft, Plus, Delete } from "@element-plus/icons-vue";
-import { useUserStore } from "@/store/userStore";
-import { createProduct, updateProduct, getProductDetail } from "@/api/product";
-import { compressImage } from "@/utils/image";
-import { PRODUCT_CATEGORIES } from "@/constants/categories";
+import { ref, reactive, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
+import { ArrowLeft, Plus, Delete } from '@element-plus/icons-vue';
+import { useUserStore } from '@/store/userStore';
+import { createProduct, updateProduct, getProductDetail } from '@/api/product';
+import { compressImage } from '@/utils/image';
+import { PRODUCT_CATEGORIES } from '@/constants/categories';
 
 const route = useRoute();
 const router = useRouter();
@@ -189,9 +159,9 @@ const editId = ref(null);
 const categories = PRODUCT_CATEGORIES;
 
 const form = reactive({
-  title: "",
-  category: "",
-  description: "",
+  title: '',
+  category: '',
+  description: '',
   price: null,
   originalPrice: null,
   condition: 9,
@@ -200,36 +170,34 @@ const form = reactive({
 
 const rules = {
   title: [
-    { required: true, message: "请输入商品标题", trigger: "blur" },
-    { min: 2, max: 50, message: "标题长度为2~50个字符", trigger: "blur" },
+    { required: true, message: '请输入商品标题', trigger: 'blur' },
+    { min: 2, max: 50, message: '标题长度为2~50个字符', trigger: 'blur' },
   ],
-  category: [{ required: true, message: "请选择分类", trigger: "change" }],
+  category: [{ required: true, message: '请选择分类', trigger: 'change' }],
   description: [
-    { required: true, message: "请输入商品描述", trigger: "blur" },
-    { min: 10, message: "描述至少10个字", trigger: "blur" },
+    { required: true, message: '请输入商品描述', trigger: 'blur' },
+    { min: 10, message: '描述至少10个字', trigger: 'blur' },
   ],
-  price: [{ required: true, message: "请输入售价", trigger: "blur" }],
+  price: [{ required: true, message: '请输入售价', trigger: 'blur' }],
 };
 
-// 打开本地文件选择器
 function openFilePicker() {
   fileInput.value.click();
 }
 
-// 处理本地图片选择
 async function handleFileChange(e) {
   const file = e.target.files[0];
   if (!file) return;
 
-  if (!file.type.startsWith("image/")) {
-    ElMessage.error("只能上传图片文件");
-    fileInput.value.value = "";
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('只能上传图片文件');
+    fileInput.value.value = '';
     return;
   }
 
   if (form.images.length >= 6) {
-    ElMessage.warning("最多上传6张图片");
-    fileInput.value.value = "";
+    ElMessage.warning('最多上传6张图片');
+    fileInput.value.value = '';
     return;
   }
 
@@ -238,19 +206,17 @@ async function handleFileChange(e) {
     const base64 = await compressImage(file, 2, 1920);
     form.images.push(base64);
   } catch {
-    ElMessage.error("图片处理失败，请重试");
+    ElMessage.error('图片处理失败，请重试');
   } finally {
     imageProcessing.value = false;
-    fileInput.value.value = "";
+    fileInput.value.value = '';
   }
 }
 
-// 移除图片
 function removeImage(idx) {
   form.images.splice(idx, 1);
 }
 
-// 提交
 async function handleSubmit() {
   if (!formRef.value) return;
   const valid = await formRef.value.validate().catch(() => false);
@@ -268,7 +234,7 @@ async function handleSubmit() {
         condition: form.condition,
         images: form.images,
       });
-      ElMessage.success("修改已保存");
+      ElMessage.success('修改已保存');
     } else {
       await createProduct({
         title: form.title,
@@ -279,23 +245,21 @@ async function handleSubmit() {
         condition: form.condition,
         images: form.images,
       });
-      ElMessage.success("商品发布成功");
+      ElMessage.success('商品发布成功');
     }
-    router.push("/");
+    router.push('/');
   } catch (error) {
-    const msg = error.response?.data?.message || "操作失败，请重试";
+    const msg = error.response?.data?.message || '操作失败，请重试';
     ElMessage.error(msg);
   } finally {
     submitting.value = false;
   }
 }
 
-// 如果是编辑模式，加载已有数据
 onMounted(async () => {
-  // 鉴权检查
   if (!userStore.isLoggedIn) {
-    ElMessage.warning("请先登录");
-    router.push("/");
+    ElMessage.warning('请先登录');
+    router.push('/');
     return;
   }
 
@@ -314,8 +278,8 @@ onMounted(async () => {
       form.condition = p.condition || 9;
       form.images = p.images || [];
     } catch {
-      ElMessage.error("加载商品信息失败");
-      router.push("/");
+      ElMessage.error('加载商品信息失败');
+      router.push('/');
     }
   }
 });
@@ -392,7 +356,6 @@ onMounted(async () => {
   min-width: 50px;
 }
 
-/* 图片区域 */
 .images-section {
   display: flex;
   flex-wrap: wrap;

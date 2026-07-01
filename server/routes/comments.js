@@ -1,5 +1,3 @@
-// 【模块三：交易与订单】商品留言与卖家回复
-// AI 生成：手动调整前请勿修改
 const express = require('express');
 const { db, genId } = require('../db');
 const { authMiddleware } = require('../middleware');

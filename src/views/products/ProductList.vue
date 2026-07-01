@@ -1,8 +1,5 @@
-<!-- 【模块二：商品发布与管理】商品列表与搜索 -->
-<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="home-page">
-    <!-- 顶部导航栏 -->
     <header class="top-bar">
       <div class="top-bar-inner">
         <h1 class="logo" @click="refreshList">CampusTrade</h1>
@@ -36,29 +33,17 @@
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
-            <el-button
-              type="primary"
-              size="small"
-              class="publish-btn"
-              @click="goPublish"
-            >
+            <el-button type="primary" size="small" class="publish-btn" @click="goPublish">
               <el-icon><Plus /></el-icon>发布商品
             </el-button>
           </template>
           <template v-else>
-            <el-button
-              type="primary"
-              size="small"
-              @click="userStore.openLogin()"
-            >
-              登录
-            </el-button>
+            <el-button type="primary" size="small" @click="userStore.openLogin()"> 登录 </el-button>
           </template>
         </div>
       </div>
     </header>
 
-    <!-- 搜索与筛选区 -->
     <div class="search-section">
       <div class="search-inner">
         <el-input
@@ -115,31 +100,21 @@
               @click="togglePriceOrder"
             >
               <el-icon><Sort /></el-icon>
-              {{
-                priceOrder === "asc"
-                  ? "价格 ↑"
-                  : priceOrder === "desc"
-                    ? "价格 ↓"
-                    : "价格排序"
-              }}
+              {{ priceOrder === 'asc' ? '价格 ↑' : priceOrder === 'desc' ? '价格 ↓' : '价格排序' }}
             </el-button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- 商品列表 -->
     <main class="main-content">
-      <!-- Loading -->
       <div v-if="loading" class="loading-box">
         <el-icon class="is-loading" :size="32"><Loading /></el-icon>
         <p>正在加载商品...</p>
       </div>
 
-      <!-- 空状态 -->
       <el-empty v-else-if="products.length === 0" description="暂无商品" />
 
-      <!-- 商品卡片网格 -->
       <div v-else class="product-grid">
         <div
           v-for="product in products"
@@ -148,21 +123,13 @@
           @click="goDetail(product.id)"
         >
           <div class="card-image">
-            <img
-              v-if="product.images?.[0]"
-              :src="product.images[0]"
-              :alt="product.title"
-            />
+            <img v-if="product.images?.[0]" :src="product.images[0]" :alt="product.title" />
             <div v-else class="placeholder-img">暂无图片</div>
             <span
-              v-if="
-                product.originalPrice && product.price < product.originalPrice
-              "
+              v-if="product.originalPrice && product.price < product.originalPrice"
               class="discount-badge"
             >
-              {{
-                Math.round((1 - product.price / product.originalPrice) * 100)
-              }}% OFF
+              {{ Math.round((1 - product.price / product.originalPrice) * 100) }}% OFF
             </span>
           </div>
           <div class="card-body">
@@ -186,7 +153,6 @@
         </div>
       </div>
 
-      <!-- 分页 -->
       <div v-if="total > pageSize" class="pagination-wrap">
         <el-pagination
           v-model:current-page="currentPage"
@@ -198,7 +164,6 @@
       </div>
     </main>
 
-    <!-- 弹窗 -->
     <LoginDialog />
     <RegisterDialog />
     <ForgotPassword />
@@ -206,9 +171,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
-import { useRouter } from "vue-router";
-import { ElMessage } from "element-plus";
+import { ref, onMounted } from 'vue';
+import { useRouter } from 'vue-router';
+import { ElMessage } from 'element-plus';
 import {
   UserFilled,
   ArrowDown,
@@ -221,34 +186,31 @@ import {
   Loading,
   List,
   Setting,
-} from "@element-plus/icons-vue";
-import { PRODUCT_CATEGORIES } from "@/constants/categories";
-import { useUserStore } from "@/store/userStore";
-import { getProducts } from "@/api/product";
-import LoginDialog from "@/components/LoginDialog.vue";
-import RegisterDialog from "@/components/RegisterDialog.vue";
-import ForgotPassword from "@/components/ForgotPassword.vue";
+} from '@element-plus/icons-vue';
+import { PRODUCT_CATEGORIES } from '@/constants/categories';
+import { useUserStore } from '@/store/userStore';
+import { getProducts } from '@/api/product';
+import LoginDialog from '@/components/LoginDialog.vue';
+import RegisterDialog from '@/components/RegisterDialog.vue';
+import ForgotPassword from '@/components/ForgotPassword.vue';
 
 const router = useRouter();
 const userStore = useUserStore();
 
-// 商品数据
 const products = ref([]);
 const total = ref(0);
 const loading = ref(false);
 const currentPage = ref(1);
 const pageSize = 10;
 
-// 搜索与筛选
-const searchKeyword = ref("");
-const selectedCategory = ref("");
-const priceOrder = ref("");
+const searchKeyword = ref('');
+const selectedCategory = ref('');
+const priceOrder = ref('');
 const minPrice = ref(null);
 const maxPrice = ref(null);
 const categories = PRODUCT_CATEGORIES;
 let searchTimer = null;
 
-// 获取商品列表
 async function fetchProducts() {
   loading.value = true;
   try {
@@ -266,13 +228,12 @@ async function fetchProducts() {
     products.value = res.data.products;
     total.value = res.data.total;
   } catch {
-    ElMessage.error("加载商品失败");
+    ElMessage.error('加载商品失败');
   } finally {
     loading.value = false;
   }
 }
 
-// 搜索输入防抖
 function onSearchInput() {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(() => {
@@ -281,7 +242,6 @@ function onSearchInput() {
   }, 400);
 }
 
-// 分类筛选
 function filterByCategory(cat) {
   selectedCategory.value = cat;
   currentPage.value = 1;
@@ -293,52 +253,47 @@ function onPriceRangeChange() {
   fetchProducts();
 }
 
-// 价格排序切换
 function togglePriceOrder() {
-  if (!priceOrder.value) priceOrder.value = "asc";
-  else if (priceOrder.value === "asc") priceOrder.value = "desc";
-  else priceOrder.value = "";
+  if (!priceOrder.value) priceOrder.value = 'asc';
+  else if (priceOrder.value === 'asc') priceOrder.value = 'desc';
+  else priceOrder.value = '';
   currentPage.value = 1;
   fetchProducts();
 }
 
-// 刷新列表
 function refreshList() {
-  searchKeyword.value = "";
-  selectedCategory.value = "";
-  priceOrder.value = "";
+  searchKeyword.value = '';
+  selectedCategory.value = '';
+  priceOrder.value = '';
   minPrice.value = null;
   maxPrice.value = null;
   currentPage.value = 1;
   fetchProducts();
 }
 
-// 跳转详情
 function goDetail(id) {
   router.push(`/product/${id}`);
 }
 
-// 发布商品
 function goPublish() {
   if (!userStore.isLoggedIn) {
     userStore.openLogin();
     return;
   }
-  router.push("/publish");
+  router.push('/publish');
 }
 
-// 下拉菜单
 function handleCommand(command) {
-  if (command === "profile") router.push("/profile");
-  else if (command === "myProducts") {
-    router.push("/my-products");
-  } else if (command === "orders") {
-    router.push("/orders");
-  } else if (command === "admin") {
-    router.push("/admin");
-  } else if (command === "logout") {
+  if (command === 'profile') router.push('/profile');
+  else if (command === 'myProducts') {
+    router.push('/my-products');
+  } else if (command === 'orders') {
+    router.push('/orders');
+  } else if (command === 'admin') {
+    router.push('/admin');
+  } else if (command === 'logout') {
     userStore.logout();
-    router.push("/");
+    router.push('/');
   }
 }
 
@@ -355,7 +310,6 @@ onMounted(() => {
   background: var(--bg-color);
 }
 
-/* ---- 导航栏 ---- */
 .top-bar {
   background: #fff;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
@@ -421,7 +375,6 @@ onMounted(() => {
   gap: 4px;
 }
 
-/* ---- 搜索区 ---- */
 .search-section {
   background: #fff;
   padding: 16px 24px;
@@ -463,7 +416,6 @@ onMounted(() => {
   color: var(--text-secondary);
 }
 
-/* ---- 主内容 ---- */
 .main-content {
   flex: 1;
   max-width: 1200px;
@@ -483,7 +435,6 @@ onMounted(() => {
   font-size: 14px;
 }
 
-/* ---- 商品网格 ---- */
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -591,7 +542,6 @@ onMounted(() => {
   color: var(--text-secondary);
 }
 
-/* ---- 分页 ---- */
 .pagination-wrap {
   display: flex;
   justify-content: center;
