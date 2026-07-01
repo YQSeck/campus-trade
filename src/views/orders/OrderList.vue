@@ -1,167 +1,187 @@
 <template>
-  <div class="order-list-page">
-    <h2>我的订单</h2>
-    <el-tabs v-model="activeRole" @tab-click="fetchOrders">
-      <el-tab-pane label="我是买家" name="buyer" />
-      <el-tab-pane label="我是卖家" name="seller" />
-    </el-tabs>
-    <el-table :data="orders" style="width: 100%" v-loading="loading">
-      <el-table-column prop="id" label="订单号" width="80" />
-      <el-table-column prop="productTitle" label="商品" />
-      <el-table-column prop="price" label="金额" width="100">
-        <template #default="{ row }">¥{{ row.price }}</template>
-      </el-table-column>
-      <el-table-column prop="status" label="状态" width="100">
-        <template #default="{ row }">
-          <el-tag :type="statusTag(row.status)">{{ statusText(row.status) }}</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column prop="createdAt" label="时间" width="180">
-        <template #default="{ row }">{{ new Date(row.createdAt).toLocaleString() }}</template>
-      </el-table-column>
-      <el-table-column label="操作" width="180">
-        <template #default="{ row }">
-          <el-button size="small" @click="handleDetail(row)">详情</el-button>
-          <el-button
-            v-if="activeRole === 'buyer' && row.status === 'pending'"
-            type="primary"
-            size="small"
-            @click="handlePay(row)"
-          >付款</el-button>
-          <el-button
-            v-if="activeRole === 'seller' && row.status === 'paid'"
-            type="success"
-            size="small"
-            @click="handleShip(row)"
-          >发货</el-button>
-          <el-button
-            v-if="activeRole === 'buyer' && row.status === 'shipped'"
-            type="success"
-            size="small"
-            @click="handleReceive(row)"
-          >确认收货</el-button>
-          <el-button
-            v-if="['pending', 'paid'].includes(row.status)"
-            type="danger"
-            size="small"
-            @click="handleCancel(row)"
-          >取消</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-pagination
-      v-if="total > pageSize"
-      v-model:current-page="currentPage"
-      :page-size="pageSize"
-      :total="total"
-      layout="prev, pager, next"
-      @change="fetchOrders"
-    />
+  <div class="order-page">
+    <div class="tab-header">
+      <el-radio-group v-model="activeTab" size="large" @change="fetchOrders">
+        <el-radio-button label="buyer">我买的</el-radio-button>
+        <el-radio-button label="seller">我卖的</el-radio-button>
+      </el-radio-group>
+    </div>
+
+    <el-empty v-if="orders.length === 0 && !loading" description="暂无订单" />
+
+    <div v-else class="order-grid">
+      <el-card
+        v-for="order in orders"
+        :key="order._id"
+        class="order-card"
+        shadow="hover"
+        @click="router.push(`/orders/${order._id}`)"
+      >
+        <div class="card-header">
+          <img :src="order.product?.images?.[0] || defaultImg" class="product-thumb" />
+          <div class="product-info">
+            <h4 class="title">{{ order.product?.title || '商品已删除' }}</h4>
+            <span class="price">¥{{ order.price }}</span>
+          </div>
+        </div>
+
+        <div class="card-footer">
+          <el-tag :type="statusTag(order.status)" effect="plain">
+            {{ statusText(order.status) }}
+          </el-tag>
+          <div class="actions" @click.stop>
+            <el-button
+              v-if="order.status === 'pending_payment' && activeTab === 'buyer'"
+              type="success" size="small" round
+              @click="handlePay(order._id)"
+            >
+              付款
+            </el-button>
+            <el-button
+              v-if="order.status === 'pending_payment' && activeTab === 'buyer'"
+              type="danger" size="small" round
+              @click="handleCancel(order._id)"
+            >
+              取消
+            </el-button>
+          </div>
+        </div>
+        <div class="time">{{ dayjs(order.updatedAt).format('MM-DD HH:mm') }}</div>
+      </el-card>
+    </div>
+
+    <div v-if="total > 10" class="pagination">
+      <el-pagination layout="prev, pager, next" :total="total" @current-change="pageChange" />
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { getOrderList, updateOrderStatus, payOrder } from '@/api/orders';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ElMessage } from 'element-plus';
+import { getOrders, payOrder, cancelOrder } from '@/api/order';
+import dayjs from 'dayjs';
+import defaultImg from '@/assets/default.jpg'; // 默认商品图
 
-const router = useRouter();
-const activeRole = ref('buyer');
+const activeTab = ref('buyer');
 const orders = ref([]);
-const loading = ref(false);
-const currentPage = ref(1);
-const pageSize = ref(10);
 const total = ref(0);
+const page = ref(1);
+const loading = ref(false);
+const router = useRouter();
 
-const statusMap = {
-  pending: '待付款',
-  paid: '待发货',
-  shipped: '待收货',
-  received: '已完成',
-  cancelled: '已取消'
-};
-const statusTagType = {
-  pending: 'warning',
-  paid: 'info',
-  shipped: '',
-  received: 'success',
-  cancelled: 'danger'
-};
-
-function statusText(status) { return statusMap[status] || status; }
-function statusTag(status) { return statusTagType[status] || ''; }
-
-async function fetchOrders() {
+const fetchOrders = async () => {
   loading.value = true;
   try {
-    const { data } = await getOrderList({
-      role: activeRole.value,
-      page: currentPage.value,
-      limit: pageSize.value
-    });
-    orders.value = data.orders;
-    total.value = data.total;
-  } catch (e) {
-    ElMessage.error('加载订单失败');
+    const res = await getOrders(activeTab.value, page.value);
+    orders.value = res.data.orders;
+    total.value = res.data.total;
   } finally {
     loading.value = false;
   }
-}
+};
 
-function handleDetail(order) {
-  router.push(`/orders/${order.id}`);
-}
+const handlePay = async (id) => {
+  await payOrder(id);
+  ElMessage.success('付款成功');
+  fetchOrders();
+};
 
-async function handlePay(order) {
-  try {
-    await ElMessageBox.confirm(`确认支付 ¥${order.price}？`, '模拟支付');
-    await payOrder(order.id);
-    ElMessage.success('支付成功');
-    fetchOrders();
-  } catch (e) {
-    if (e !== 'cancel') ElMessage.error('支付失败');
-  }
-}
+const handleCancel = async (id) => {
+  await cancelOrder(id);
+  ElMessage.success('订单已取消');
+  fetchOrders();
+};
 
-async function handleShip(order) {
-  try {
-    await updateOrderStatus(order.id, 'shipped');
-    ElMessage.success('已标记发货');
-    fetchOrders();
-  } catch (e) {
-    ElMessage.error('操作失败');
-  }
-}
+const pageChange = (p) => {
+  page.value = p;
+  fetchOrders();
+};
 
-async function handleReceive(order) {
-  try {
-    await updateOrderStatus(order.id, 'received');
-    ElMessage.success('已确认收货，交易完成');
-    fetchOrders();
-  } catch (e) {
-    ElMessage.error('操作失败');
-  }
-}
+const statusText = (s) => ({
+  pending_payment: '待付款',
+  pending_shipment: '待发货',
+  pending_receipt: '待收货',
+  completed: '已完成',
+  cancelled: '已取消'
+}[s]);
 
-async function handleCancel(order) {
-  try {
-    await ElMessageBox.confirm('确定取消订单？', '提示');
-    await updateOrderStatus(order.id, 'cancelled');
-    ElMessage.success('订单已取消');
-    fetchOrders();
-  } catch (e) {
-    if (e !== 'cancel') ElMessage.error('取消失败');
-  }
-}
+const statusTag = (s) => ({
+  pending_payment: 'warning',
+  pending_shipment: 'primary',
+  pending_receipt: '',
+  completed: 'success',
+  cancelled: 'info'
+}[s]);
 
-onMounted(fetchOrders);
+fetchOrders();
 </script>
 
 <style scoped>
-.order-list-page {
+.order-page {
+  padding: 20px;
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
+}
+.tab-header {
+  text-align: center;
+  margin-bottom: 24px;
+}
+.order-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+.order-card {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+.order-card:hover {
+  transform: translateY(-4px);
+}
+.card-header {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.product-thumb {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+.product-info .title {
+  margin: 0 0 4px;
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 180px;
+}
+.price {
+  color: #e74c3c;
+  font-weight: bold;
+}
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.actions {
+  display: flex;
+  gap: 6px;
+}
+.time {
+  margin-top: 8px;
+  color: #999;
+  font-size: 12px;
+  text-align: right;
+}
+.pagination {
+  display: flex;
+  justify-content: center;
+  margin-top: 24px;
 }
 </style>
