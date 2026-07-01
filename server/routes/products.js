@@ -21,8 +21,10 @@ router.get('/', (req, res) => {
       const decoded = jwt.verify(token, JWT_SECRET);
       filtered = filtered.filter((p) => p.sellerId === decoded.id);
     } catch {
-      /* ignore */
+      return res.status(401).json({ message: '登录已过期，请重新登录' });
     }
+  } else if (mine) {
+    return res.status(401).json({ message: '未登录，请先登录' });
   }
 
   if (status) {
