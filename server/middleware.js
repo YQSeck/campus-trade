@@ -1,14 +1,22 @@
 // 【公共基础】JWT 鉴权、密码加密、账号规范化
-// AI 生成：手动调整前请勿修改
+// AI 生成：手动调整：bcrypt 替换 SHA256、两级锁定机制、apiKeyMiddleware 保留 origin+host 白名单
 const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 
 const JWT_SECRET = 'campus-trade-secret-key';
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOCK_DURATION_MS = 15 * 60 * 1000;
+const MAX_LOGIN_ATTEMPTS_TIER1 = 5;
+const MAX_LOGIN_ATTEMPTS_TIER2 = 10;
+const LOCK_DURATION_30MIN = 30 * 60 * 1000;
+const LOCK_DURATION_24HR = 24 * 60 * 60 * 1000;
+const SALT_ROUNDS = 10;
+const PUBLIC_API_KEY = 'campus-trade-2026-public';
 
 function hashPassword(password) {
-  return crypto.createHash('sha256').update(password).digest('hex');
+  return bcrypt.hashSync(password, SALT_ROUNDS);
+}
+
+function comparePassword(password, hash) {
+  return bcrypt.compareSync(password, hash);
 }
 
 function generateToken(user) {
@@ -58,7 +66,9 @@ function mockSendEmail(email, content) {
 
 function normalizeAccount(value) {
   if (value == null) return '';
-  let v = String(value).trim().replace(/[\s\-()]/g, '');
+  let v = String(value)
+    .trim()
+    .replace(/[\s\-()]/g, '');
   if (v.startsWith('+86')) {
     v = v.slice(3);
   } else if (/^86\d{11}$/.test(v)) {
@@ -68,8 +78,7 @@ function normalizeAccount(value) {
 }
 
 // ========== 模块六：开放 API 第三方鉴权 ==========
-const PUBLIC_API_KEY = 'campus-trade-2026-public';
-
+// 保留 origin + host 双重白名单（确保前端页面 + Vite 代理都能正常访问）
 function apiKeyMiddleware(req, res, next) {
   // 只对 GET 请求进行校验，POST/PUT/DELETE 由 JWT 接管
   if (req.method !== 'GET') {
@@ -78,11 +87,15 @@ function apiKeyMiddleware(req, res, next) {
 
   const apiKey = req.headers['x-api-key'] || req.query.api_key;
   const origin = req.headers.origin;
+  const host = req.headers.host || '';
 
-  // ===== 关键修改 =====
-  // 只有【有 origin 头且来自 localhost】的请求才放行（即浏览器页面请求）
-  // curl/Postman 没有 origin 头，必须校验 API Key
+  // 有 origin 且来自 localhost：放行（浏览器页面请求）
   if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
+    return next();
+  }
+
+  // 没有 origin 但 host 是 localhost：放行（Vite 代理或其他本地请求）
+  if (host.includes('localhost') || host.includes('127.0.0.1')) {
     return next();
   }
 
@@ -96,9 +109,14 @@ function apiKeyMiddleware(req, res, next) {
 
 module.exports = {
   JWT_SECRET,
-  MAX_LOGIN_ATTEMPTS,
-  LOCK_DURATION_MS,
+  PUBLIC_API_KEY,
+  MAX_LOGIN_ATTEMPTS_TIER1,
+  MAX_LOGIN_ATTEMPTS_TIER2,
+  LOCK_DURATION_30MIN,
+  LOCK_DURATION_24HR,
+  SALT_ROUNDS,
   hashPassword,
+  comparePassword,
   generateToken,
   authMiddleware,
   adminMiddleware,

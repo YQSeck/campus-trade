@@ -1,5 +1,5 @@
-// 【模块七：CLI】订单导出单元测试
-// AI 生成：手动调整前请勿修改
+
+
 var { describe, it } = require('node:test');
 var assert = require('node:assert/strict');
 
@@ -62,7 +62,7 @@ describe('orders - ordersToCsv', function() {
     var csv = ordersToCsv([]);
     var lines = csv.split('\n');
     assert.strictEqual(lines.length, 2);
-    assert.ok(lines[0].indexOf('订单ID') === 1); // after BOM
+    assert.ok(lines[0].indexOf('订单ID') === 1);
     assert.strictEqual(lines[1], '');
   });
 

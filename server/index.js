@@ -4,16 +4,20 @@ const express = require('express');
 const cors = require('cors');
 const { authRouter, userRouter, uploadRouter } = require('./routes/auth');
 const { apiKeyMiddleware } = require('./middleware');
-
-// 模块八：开放 Skill
 const pricingRoutes = require('../src/skills/pricingRoutes');
 
 const app = express();
-app.use(cors());
+app.use(
+  cors({
+    origin: ['https://campustrade.example.com', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// ===== 模块一：用户系统 =====
+// 模块一：用户系统
 app.use('/api/auth', authRouter);
 app.use('/api/user', userRouter);
 app.use('/api/upload', uploadRouter);

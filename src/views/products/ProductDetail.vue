@@ -24,15 +24,13 @@
               :src="product.images[currentImageIndex]"
               :alt="product.title"
               class="main-image"
+              @click="openPreview"
+              title="点击查看大图"
             />
             <div v-else class="no-image">暂无图片</div>
             <template v-if="(product.images?.length || 0) > 1">
-              <button class="img-arrow img-arrow-left" @click="prevImage">
-                ‹
-              </button>
-              <button class="img-arrow img-arrow-right" @click="nextImage">
-                ›
-              </button>
+              <button class="img-arrow img-arrow-left" @click="prevImage">‹</button>
+              <button class="img-arrow img-arrow-right" @click="nextImage">›</button>
             </template>
           </div>
           <div v-if="(product.images?.length || 0) > 1" class="image-thumbs">
@@ -145,12 +143,7 @@
             clearable
             style="margin-top: 10px"
           />
-          <el-button
-            v-if="canReply"
-            size="small"
-            style="margin-top: 8px"
-            @click="replyToBuyer"
-          >
+          <el-button v-if="canReply" size="small" style="margin-top: 8px" @click="replyToBuyer">
             回复买家
           </el-button>
         </template>
@@ -162,6 +155,36 @@
       <el-icon class="is-loading" :size="32"><Loading /></el-icon>
       <p>加载中...</p>
     </div>
+
+    <!-- 图片全屏预览 -->
+    <Teleport to="body">
+      <div
+        v-if="previewVisible"
+        class="image-preview-overlay"
+        @click="closePreview"
+      >
+        <div class="preview-close" @click="closePreview">✕</div>
+        <img
+          :src="product?.images?.[previewIndex] || ''"
+          :alt="product?.title"
+          class="preview-image"
+          @click.stop
+        />
+        <button
+          v-if="product?.images?.length > 1"
+          class="preview-arrow preview-arrow-left"
+          @click.stop="previewPrev"
+        >‹</button>
+        <button
+          v-if="product?.images?.length > 1"
+          class="preview-arrow preview-arrow-right"
+          @click.stop="previewNext"
+        >›</button>
+        <div v-if="product?.images?.length > 1" class="preview-counter">
+          {{ previewIndex + 1 }} / {{ product.images.length }}
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -188,8 +211,30 @@ const userStore = useUserStore();
 
 const product = ref(null);
 const currentImageIndex = ref(0);
+const previewVisible = ref(false);
+const previewIndex = ref(0);
+
+function openPreview() {
+  previewIndex.value = currentImageIndex.value;
+  previewVisible.value = true;
+}
+function closePreview() {
+  previewVisible.value = false;
+}
+function previewPrev() {
+  if (!product.value?.images) return;
+  previewIndex.value =
+    (previewIndex.value - 1 + product.value.images.length) %
+    product.value.images.length;
+}
+function previewNext() {
+  if (!product.value?.images) return;
+  previewIndex.value =
+    (previewIndex.value + 1) % product.value.images.length;
+}
+
 const comments = ref([]);
-const newComment = ref("");
+const newComment = ref('');
 const ordering = ref(false);
 const replyParentId = ref(null);
 
@@ -633,12 +678,80 @@ onMounted(() => {
   color: var(--text-secondary);
   font-size: 14px;
 }
-.report-comment-btn {
-  float: right;
-  font-size: 12px;
-  color: var(--text-secondary);
+</style>
+<style>
+.image-preview-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: zoom-out;
 }
-.report-comment-btn:hover {
-  color: var(--danger-color);
+.preview-close {
+  position: absolute;
+  top: 20px;
+  right: 24px;
+  color: #fff;
+  font-size: 32px;
+  cursor: pointer;
+  z-index: 10;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  transition: background 0.2s;
+}
+.preview-close:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.preview-image {
+  max-width: 90vw;
+  max-height: 90vh;
+  object-fit: contain;
+  cursor: default;
+  border-radius: 4px;
+}
+.preview-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  font-size: 32px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.preview-arrow:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+.preview-arrow-left {
+  left: 20px;
+}
+.preview-arrow-right {
+  right: 20px;
+}
+.preview-counter {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #fff;
+  font-size: 14px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px 16px;
+  border-radius: 20px;
 }
 </style>

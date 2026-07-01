@@ -1,14 +1,17 @@
 // 【模块一：用户系统】注册、登录、忘记密码、个人信息、密码修改
-// AI 生成：手动调整前请勿修改
+// AI 生成，手动调整：bcrypt 密码比较、两级锁定、验证码找回密码
 const express = require('express');
 const { db, genId } = require('../db');
 const {
   hashPassword,
+  comparePassword,
   generateToken,
   authMiddleware,
   mockSendEmail,
-  MAX_LOGIN_ATTEMPTS,
-  LOCK_DURATION_MS,
+  MAX_LOGIN_ATTEMPTS_TIER1,
+  MAX_LOGIN_ATTEMPTS_TIER2,
+  LOCK_DURATION_30MIN,
+  LOCK_DURATION_24HR,
   normalizeAccount,
 } = require('../middleware');
 
@@ -58,7 +61,7 @@ router.post('/register', (req, res) => {
     contact: '',
     contactVisible: true,
     role: 'user',
-    reputationScore: 100,
+    reputationScore: 100,   // 保留 HEAD 的 100（初始信誉分）
     banned: false,
     lockedUntil: null,
     loginAttempts: 0,
@@ -92,17 +95,32 @@ router.post('/login', (req, res) => {
     return res.status(403).json({ message: `账号已被锁定，请 ${remaining} 分钟后再试` });
   }
 
-  if (user.password !== hashPassword(password)) {
+  // ===== 两级锁定：使用 bcrypt 验证密码 =====
+  if (!comparePassword(password, user.password)) {
     user.loginAttempts = (user.loginAttempts || 0) + 1;
-    if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
-      user.lockedUntil = new Date(Date.now() + LOCK_DURATION_MS).toISOString();
+    const attempts = user.loginAttempts;
+
+    if (attempts >= MAX_LOGIN_ATTEMPTS_TIER2) {
+      // 二级锁定：24小时（10次失败后）
+      user.lockedUntil = new Date(Date.now() + LOCK_DURATION_24HR).toISOString();
       user.loginAttempts = 0;
-      return res.status(403).json({ message: '密码错误次数过多，账号已被锁定15分钟' });
+      return res
+        .status(403)
+        .json({ message: '密码错误次数过多，账号已被锁定24小时，请联系管理员解封' });
     }
-    const remaining = MAX_LOGIN_ATTEMPTS - user.loginAttempts;
+
+    if (attempts >= MAX_LOGIN_ATTEMPTS_TIER1) {
+      // 一级锁定：30分钟（5次失败后）
+      user.lockedUntil = new Date(Date.now() + LOCK_DURATION_30MIN).toISOString();
+      user.loginAttempts = 0;
+      return res.status(403).json({ message: '密码错误次数过多，账号已被锁定30分钟' });
+    }
+
+    const remaining = MAX_LOGIN_ATTEMPTS_TIER1 - attempts;
     return res.status(401).json({ message: `邮箱/手机号或密码错误，还剩 ${remaining} 次尝试机会` });
   }
 
+  // 登录成功，重置尝试次数和锁定状态
   user.loginAttempts = 0;
   user.lockedUntil = null;
 
@@ -148,6 +166,7 @@ router.post('/forgot-password', (req, res) => {
   mockSendEmail(target, `您的验证码是 ${code}（10分钟内有效）`);
   console.log(`[忘记密码] ${target} 的验证码: ${code}`);
 
+  // 不修改原密码，只返回验证码已发送
   res.json({ message: '验证码已发送至邮箱/手机，请在10分钟内完成验证' });
 });
 
@@ -180,9 +199,6 @@ router.post('/reset-password', (req, res) => {
   // 验证通过，更新密码
   const isEmailAccount = account.includes('@');
   const user = db.users.find((u) => (isEmailAccount ? u.email === account : u.phone === account));
-  if (!user) {
-    return res.status(404).json({ message: '用户不存在' });
-  }
   user.password = hashPassword(newPassword);
   user.loginAttempts = 0;
   user.lockedUntil = null;
@@ -244,7 +260,7 @@ userRoutes.put('/password', authMiddleware, (req, res) => {
   if (!oldPassword || !newPassword) {
     return res.status(400).json({ message: '请输入当前密码和新密码' });
   }
-  if (user.password !== hashPassword(oldPassword)) {
+  if (!comparePassword(oldPassword, user.password)) {
     return res.status(400).json({ message: '当前密码错误' });
   }
   if (newPassword.length < 6) {

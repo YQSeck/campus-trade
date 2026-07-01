@@ -9,14 +9,10 @@ function recommend(input) {
   var marketPrices = input.marketPrices;
 
   if (!category || !pricingData.isValidCategory(category)) {
-    return errorResult(
-      "无效分类，可选值：" + pricingData.validCategories.join("、"),
-    );
+    return errorResult('无效分类，可选值：' + pricingData.validCategories.join('、'));
   }
   if (!condition || !pricingData.isValidCondition(condition)) {
-    return errorResult(
-      "无效成色，可选值：" + pricingData.validConditions.join("、"),
-    );
+    return errorResult('无效成色，可选值：' + pricingData.validConditions.join('、'));
   }
 
   var categoryRate = pricingData.getCategoryBaseRate(category);

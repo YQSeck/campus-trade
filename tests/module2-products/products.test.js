@@ -334,9 +334,10 @@ describe('DELETE /api/products/:id', function () {
     assert.ok(res.body.message.includes('已删除'));
   });
 
-  it('删除后再次获取返回404', async function () {
+  it('删除后状态变为 deleted', async function () {
     var res = await request('GET', '/products/' + productIdA);
-    assert.strictEqual(res.status, 404);
+    assert.strictEqual(res.status, 200);
+    assert.strictEqual(res.body.product.status, 'deleted');
   });
 
   it('非本人商品返回403', async function () {
