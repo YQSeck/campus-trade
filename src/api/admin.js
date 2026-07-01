@@ -37,7 +37,12 @@ export const resolveReportApi = (id) =>
 export const dismissReportApi = (id) =>
   request.put(`/admin/reports/${id}`, { status: "dismissed" });
 
+export const getReportDetail = (id) => request.get(`/admin/reports/${id}`);
+
 // 【模块四】评价管理
 export const getAdminReviews = () => request.get("/admin/reviews");
 
 export const deleteReviewApi = (id) => request.delete(`/admin/reviews/${id}`);
+
+// 【模块五】留言管理
+export const deleteCommentApi = (id) => request.delete(`/admin/comments/${id}`);

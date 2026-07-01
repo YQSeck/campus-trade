@@ -144,7 +144,9 @@ router.delete('/:id', authMiddleware, (req, res) => {
   if (db.products[idx].sellerId !== req.user.id && req.user.role !== 'admin') {
     return res.status(403).json({ message: '无权操作该商品' });
   }
-  db.products[idx].status = 'deleted';
+  // 物理删除：从数组中移除，清理关联的留言
+  db.comments = db.comments.filter((c) => c.productId !== id);
+  db.products.splice(idx, 1);
   res.json({ message: '商品已删除' });
 });
 

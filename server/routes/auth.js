@@ -124,6 +124,9 @@ router.post('/login', (req, res) => {
   });
 });
 
+// 验证码存储：{ email/phone: { code, expiresAt } }
+const resetCodes = new Map();
+
 router.post('/forgot-password', (req, res) => {
   const account = normalizeAccount(req.body.email);
 
@@ -137,14 +140,53 @@ router.post('/forgot-password', (req, res) => {
     return res.status(404).json({ message: '该账号未注册' });
   }
 
-  const newPassword = Math.random().toString(36).slice(-8);
+  // 生成6位数字验证码，10分钟有效
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  resetCodes.set(account, { code, expiresAt: Date.now() + 10 * 60 * 1000 });
+
+  const target = user.email || user.phone;
+  mockSendEmail(target, `您的验证码是 ${code}（10分钟内有效）`);
+  console.log(`[忘记密码] ${target} 的验证码: ${code}`);
+
+  // 不修改原密码，只返回验证码已发送
+  res.json({ message: '验证码已发送至邮箱/手机，请在10分钟内完成验证' });
+});
+
+router.post('/reset-password', (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ message: '请填写完整信息（邮箱、验证码、新密码）' });
+  }
+
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: '新密码长度不能少于6位' });
+  }
+
+  const account = normalizeAccount(email);
+  const stored = resetCodes.get(account);
+
+  // 校验验证码
+  if (!stored) {
+    return res.status(400).json({ message: '未发送验证码或验证码已失效，请重新获取' });
+  }
+  if (Date.now() > stored.expiresAt) {
+    resetCodes.delete(account);
+    return res.status(400).json({ message: '验证码已过期（有效期为10分钟），请重新获取' });
+  }
+  if (stored.code !== code) {
+    return res.status(400).json({ message: '验证码错误' });
+  }
+
+  // 验证通过，更新密码
+  const isEmailAccount = account.includes('@');
+  const user = db.users.find((u) => (isEmailAccount ? u.email === account : u.phone === account));
   user.password = hashPassword(newPassword);
   user.loginAttempts = 0;
   user.lockedUntil = null;
-  const target = user.email || user.phone;
-  mockSendEmail(target, `您的新密码是 ${newPassword}`);
+  resetCodes.delete(account);
 
-  res.json({ message: '新密码已发送至邮箱/手机' });
+  res.json({ message: '密码重置成功，请使用新密码登录' });
 });
 
 const userRoutes = express.Router();
