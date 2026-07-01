@@ -71,22 +71,18 @@ function normalizeAccount(value) {
 const PUBLIC_API_KEY = 'campus-trade-2026-public';
 
 function apiKeyMiddleware(req, res, next) {
-  // 只对 GET 请求进行第三方 API Key 校验，POST/PUT/DELETE 由 JWT 接管
+  // 只对 GET 请求进行校验，POST/PUT/DELETE 由 JWT 接管
   if (req.method !== 'GET') {
     return next();
   }
 
   const apiKey = req.headers['x-api-key'] || req.query.api_key;
   const origin = req.headers.origin;
-  const host = req.headers.host;
 
-  // 同源请求（前端页面）直接放行
-  if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('::1') || origin.includes('5173') || origin.includes('3000'))) {
-    return next();
-  }
-
-  // 没有 origin 头时（如 Vite 代理转发），检查 host
-  if (host && (host.includes('localhost') || host.includes('127.0.0.1') || host.includes('::1'))) {
+  // ===== 关键修改 =====
+  // 只有【有 origin 头且来自 localhost】的请求才放行（即浏览器页面请求）
+  // curl/Postman 没有 origin 头，必须校验 API Key
+  if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1'))) {
     return next();
   }
 

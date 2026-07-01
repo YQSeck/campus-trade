@@ -37,7 +37,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="340">
+        <el-table-column label="操作" width="260">
           <template #default="{ row }">
             <el-button size="small" type="info" @click="handleViewProduct(row)">
               详情
@@ -118,7 +118,7 @@
       <el-table :data="reportList" stripe>
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="reason" label="举报原因" />
-        <el-table-column prop="targetType" label="对象类型" width="80" />
+        <el-table-column prop="targetType" label="对象类型" width="90" />
         <el-table-column prop="targetId" label="对象ID" width="80" />
         <el-table-column prop="status" label="状态" width="80">
           <template #default="{ row }">
@@ -135,7 +135,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="360">
+        <el-table-column label="操作" width="260">
           <template #default="{ row }">
             <!-- 详情按钮（所有类型都有） -->
             <el-button size="small" type="info" @click="handleViewReport(row)">
@@ -143,14 +143,22 @@
             </el-button>
 
             <!-- 商品举报：删除商品按钮 -->
-            <template v-if="row.targetType === 'product' && row.status === 'pending'">
-              <el-button size="small" type="danger" @click="handleDeleteProductByReport(row)">
+            <template
+              v-if="row.targetType === 'product' && row.status === 'pending'"
+            >
+              <el-button
+                size="small"
+                type="danger"
+                @click="handleDeleteProductByReport(row)"
+              >
                 删除商品
               </el-button>
             </template>
 
             <!-- 留言举报：删除留言按钮 -->
-            <template v-if="row.targetType === 'comment' && row.status === 'pending'">
+            <template
+              v-if="row.targetType === 'comment' && row.status === 'pending'"
+            >
               <el-button
                 size="small"
                 type="danger"
@@ -162,15 +170,17 @@
 
             <!-- 驳回按钮（所有待处理举报都有） -->
             <template v-if="row.status === 'pending'">
-              <el-button size="small" type="warning" @click="dismissReport(row)">
+              <el-button
+                size="small"
+                type="warning"
+                @click="dismissReport(row)"
+              >
                 驳回
               </el-button>
             </template>
 
             <!-- 已处理的显示状态 -->
-            <span v-else style="color: var(--text-secondary)">
-              已处理
-            </span>
+            <span v-else style="color: var(--text-secondary)"> 已处理 </span>
           </template>
         </el-table-column>
       </el-table>
@@ -185,13 +195,17 @@
         <el-table-column prop="id" label="ID" width="60" />
         <el-table-column prop="reviewerNickname" label="评价人" width="100" />
         <el-table-column prop="orderTitle" label="关联订单" />
-        <el-table-column prop="rating" label="星级" width="80">
+        <el-table-column prop="rating" label="星级" width="140">
           <template #default="{ row }">
             <el-rate :model-value="row.rating" disabled size="small" />
           </template>
         </el-table-column>
         <el-table-column prop="content" label="评价内容" />
-        <el-table-column prop="createdAt" label="时间" width="170" />
+        <el-table-column prop="createdAt" label="时间" width="170">
+          <template #default="{ row }">
+            {{ new Date(row.createdAt).toLocaleString("zh-CN") }}
+          </template>
+        </el-table-column>
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
             <el-button size="small" type="danger" @click="deleteReview(row)"
@@ -535,7 +549,11 @@ const handleDeleteProductByReport = async (row) => {
     await ElMessageBox.confirm(
       `确认删除被举报的商品「${productTitle}」？删除后不可恢复，举报将自动标记为已处理。`,
       "删除商品",
-      { type: "warning", confirmButtonText: "确认删除", cancelButtonText: "取消" },
+      {
+        type: "warning",
+        confirmButtonText: "确认删除",
+        cancelButtonText: "取消",
+      },
     );
   } catch {
     return;

@@ -78,7 +78,13 @@
           </div>
 
           <!-- 买家操作 -->
-          <div class="action-row" v-else-if="product.status === 'active' && product.sellerId !== userStore.user?.id">
+          <div
+            class="action-row"
+            v-else-if="
+              product.status === 'active' &&
+              product.sellerId !== userStore.user?.id
+            "
+          >
             <el-button
               type="danger"
               size="large"
@@ -163,7 +169,12 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { ArrowLeft, UserFilled, Loading, Warning } from "@element-plus/icons-vue";
+import {
+  ArrowLeft,
+  UserFilled,
+  Loading,
+  Warning,
+} from "@element-plus/icons-vue";
 import { useUserStore } from "@/store/userStore";
 import { getProductDetail } from "@/api/product";
 import { getComments, addComment } from "@/api/comments";
@@ -286,7 +297,7 @@ async function handleReportComment(comment) {
         cancelButtonText: "取消",
         inputValidator: (val) => val?.trim()?.length > 0,
         inputErrorMessage: "请填写举报原因",
-      }
+      },
     );
     if (!value?.trim()) return;
     await createReport({
