@@ -117,6 +117,17 @@
           <span v-if="c.parentId" class="reply-tag">回复</span>：
           <span>{{ c.content }}</span>
           <span class="time">{{ new Date(c.createdAt).toLocaleString() }}</span>
+          <!-- 举报留言按钮（新增） -->
+          <el-button
+            v-if="userStore.isLoggedIn && c.userId !== userStore.user?.id"
+            type="danger"
+            link
+            size="small"
+            class="report-comment-btn"
+            @click="handleReportComment(c)"
+          >
+            <el-icon><Warning /></el-icon>举报
+          </el-button>
         </div>
         <div v-if="!comments.length" class="no-comments">暂无留言</div>
 
@@ -152,11 +163,12 @@
 import { ref, computed, onMounted } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { ElMessage, ElMessageBox } from "element-plus";
-import { ArrowLeft, UserFilled, Loading } from "@element-plus/icons-vue";
+import { ArrowLeft, UserFilled, Loading, Warning } from "@element-plus/icons-vue";
 import { useUserStore } from "@/store/userStore";
 import { getProductDetail } from "@/api/product";
 import { getComments, addComment } from "@/api/comments";
 import { createOrder } from "@/api/orders";
+import { createReport } from "@/api/reports";
 import request from "@/utils/request";
 
 const route = useRoute();
@@ -234,6 +246,7 @@ async function handleWant() {
   }
 }
 
+// 举报商品
 async function handleReport() {
   if (!userStore.isLoggedIn) {
     userStore.openLogin();
@@ -245,12 +258,43 @@ async function handleReport() {
       cancelButtonText: "取消",
     });
     if (!value?.trim()) return;
-    await request.post("/reports", {
+    await createReport({
       targetType: "product",
       targetId: product.value.id,
       reason: value.trim(),
     });
     ElMessage.success("举报已提交");
+  } catch (e) {
+    if (e !== "cancel") {
+      ElMessage.error(e.response?.data?.message || "举报失败");
+    }
+  }
+}
+
+// ===== 举报留言 =====
+async function handleReportComment(comment) {
+  if (!userStore.isLoggedIn) {
+    userStore.openLogin();
+    return;
+  }
+  try {
+    const { value } = await ElMessageBox.prompt(
+      "请描述举报该留言的原因",
+      "举报留言",
+      {
+        confirmButtonText: "提交",
+        cancelButtonText: "取消",
+        inputValidator: (val) => val?.trim()?.length > 0,
+        inputErrorMessage: "请填写举报原因",
+      }
+    );
+    if (!value?.trim()) return;
+    await createReport({
+      targetType: "comment",
+      targetId: comment.id,
+      reason: value.trim(),
+    });
+    ElMessage.success("举报已提交，等待管理员审核");
   } catch (e) {
     if (e !== "cancel") {
       ElMessage.error(e.response?.data?.message || "举报失败");
@@ -577,5 +621,13 @@ onMounted(() => {
 .no-comments {
   color: var(--text-secondary);
   font-size: 14px;
+}
+.report-comment-btn {
+  float: right;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.report-comment-btn:hover {
+  color: var(--danger-color);
 }
 </style>

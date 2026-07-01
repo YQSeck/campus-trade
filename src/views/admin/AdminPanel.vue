@@ -1,5 +1,3 @@
-<!-- 【模块五：后台管理】管理员面板 -->
-<!-- AI 生成：手动调整前请勿修改 -->
 <template>
   <div class="admin-panel" v-if="isAdmin">
     <el-button link class="back-btn" @click="$router.push('/')">
@@ -39,8 +37,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="260">
+        <el-table-column label="操作" width="340">
           <template #default="{ row }">
+            <el-button size="small" type="info" @click="handleViewProduct(row)">
+              详情
+            </el-button>
             <el-button
               size="small"
               @click="toggleProductStatus(row)"
@@ -134,21 +135,42 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column
-          label="操作"
-          width="200"
-          v-if="reportList.some((r) => r.status === 'pending')"
-        >
+        <el-table-column label="操作" width="360">
           <template #default="{ row }">
-            <template v-if="row.status === 'pending'">
-              <el-button size="small" type="success" @click="resolveReport(row)"
-                >已处理</el-button
-              >
-              <el-button size="small" type="danger" @click="dismissReport(row)"
-                >驳回</el-button
-              >
+            <!-- 详情按钮（所有类型都有） -->
+            <el-button size="small" type="info" @click="handleViewReport(row)">
+              详情
+            </el-button>
+
+            <!-- 商品举报：删除商品按钮 -->
+            <template v-if="row.targetType === 'product' && row.status === 'pending'">
+              <el-button size="small" type="danger" @click="handleDeleteProductByReport(row)">
+                删除商品
+              </el-button>
             </template>
-            <span v-else>已处理</span>
+
+            <!-- 留言举报：删除留言按钮 -->
+            <template v-if="row.targetType === 'comment' && row.status === 'pending'">
+              <el-button
+                size="small"
+                type="danger"
+                @click="handleDeleteComment(row)"
+              >
+                删除留言
+              </el-button>
+            </template>
+
+            <!-- 驳回按钮（所有待处理举报都有） -->
+            <template v-if="row.status === 'pending'">
+              <el-button size="small" type="warning" @click="dismissReport(row)">
+                驳回
+              </el-button>
+            </template>
+
+            <!-- 已处理的显示状态 -->
+            <span v-else style="color: var(--text-secondary)">
+              已处理
+            </span>
           </template>
         </el-table-column>
       </el-table>
@@ -172,11 +194,9 @@
         <el-table-column prop="createdAt" label="时间" width="170" />
         <el-table-column label="操作" width="100">
           <template #default="{ row }">
-            <el-button
-              size="small"
-              type="danger"
-              @click="deleteReview(row)"
-            >删除</el-button>
+            <el-button size="small" type="danger" @click="deleteReview(row)"
+              >删除</el-button
+            >
           </template>
         </el-table-column>
       </el-table>
@@ -189,11 +209,140 @@
       sub-title="请使用管理员账号登录"
     />
   </div>
+  <!-- ===== 通用详情弹窗（新增） ===== -->
+  <el-dialog
+    v-model="detailDialogVisible"
+    :title="detailDialogTitle"
+    width="600px"
+    destroy-on-close
+  >
+    <div v-loading="detailLoading" style="min-height: 120px">
+      <!-- 商品详情 -->
+      <template v-if="detailType === 'product' && detailData">
+        <div class="detail-image-wrap" v-if="detailData.images?.length">
+          <el-image
+            v-for="(img, idx) in detailData.images"
+            :key="idx"
+            :src="img"
+            fit="cover"
+            style="
+              width: 100px;
+              height: 100px;
+              margin-right: 8px;
+              border-radius: 4px;
+            "
+            :preview-src-list="detailData.images"
+          />
+        </div>
+        <el-descriptions :column="2" border style="margin-top: 12px">
+          <el-descriptions-item label="标题">{{
+            detailData.title
+          }}</el-descriptions-item>
+          <el-descriptions-item label="分类">{{
+            detailData.category
+          }}</el-descriptions-item>
+          <el-descriptions-item label="售价"
+            >¥{{ detailData.price }}</el-descriptions-item
+          >
+          <el-descriptions-item label="原价" v-if="detailData.originalPrice"
+            >¥{{ detailData.originalPrice }}</el-descriptions-item
+          >
+          <el-descriptions-item label="成色"
+            >{{ detailData.condition }}成新</el-descriptions-item
+          >
+          <el-descriptions-item label="卖家">{{
+            detailData.sellerNickname
+          }}</el-descriptions-item>
+          <el-descriptions-item label="学校">{{
+            detailData.sellerSchool
+          }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag :type="detailData.status === 'active' ? 'success' : 'info'">
+              {{ detailData.status === "active" ? "在售" : "已下架" }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="描述" :span="2">
+            {{ detailData.description }}
+          </el-descriptions-item>
+        </el-descriptions>
+      </template>
+
+      <!-- 举报详情 -->
+      <template v-if="detailType === 'report' && detailData">
+        <el-descriptions :column="2" border>
+          <el-descriptions-item label="举报ID">{{
+            detailData.id
+          }}</el-descriptions-item>
+          <el-descriptions-item label="举报人">{{
+            detailData.reporterNickname || "未知"
+          }}</el-descriptions-item>
+          <el-descriptions-item label="目标类型">{{
+            detailData.targetType
+          }}</el-descriptions-item>
+          <el-descriptions-item label="目标ID">{{
+            detailData.targetId
+          }}</el-descriptions-item>
+          <el-descriptions-item label="状态">
+            <el-tag
+              :type="
+                detailData.status === 'pending'
+                  ? 'warning'
+                  : detailData.status === 'resolved'
+                    ? 'success'
+                    : 'info'
+              "
+            >
+              {{
+                detailData.status === "pending"
+                  ? "待处理"
+                  : detailData.status === "resolved"
+                    ? "已处理"
+                    : "已驳回"
+              }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="举报时间">
+            {{ new Date(detailData.createdAt).toLocaleString() }}
+          </el-descriptions-item>
+          <el-descriptions-item label="举报原因" :span="2">
+            {{ detailData.reason }}
+          </el-descriptions-item>
+          <el-descriptions-item
+            label="目标详情"
+            :span="2"
+            v-if="detailData.targetDetail"
+          >
+            <div v-if="detailData.targetType === 'product'">
+              <strong>{{ detailData.targetDetail.title }}</strong>
+              <span style="margin-left: 12px; color: var(--text-secondary)">
+                售价 ¥{{ detailData.targetDetail.price }}
+              </span>
+              <span style="margin-left: 12px; color: var(--text-secondary)">
+                {{
+                  detailData.targetDetail.status === "active"
+                    ? "在售"
+                    : "已下架"
+                }}
+              </span>
+            </div>
+            <div v-else-if="detailData.targetType === 'comment'">
+              {{ detailData.targetDetail.content || "留言内容" }}
+            </div>
+            <span v-else>无额外详情</span>
+          </el-descriptions-item>
+        </el-descriptions>
+      </template>
+    </div>
+    <template #footer>
+      <el-button @click="detailDialogVisible = false">关闭</el-button>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
-import { ref, onMounted, watch, nextTick } from "vue";
+import { ref, onMounted } from "vue";
 import { ArrowLeft } from "@element-plus/icons-vue";
+import { ElMessage, ElMessageBox } from "element-plus";
 import request from "@/utils/request";
 import {
   getAdminStats,
@@ -205,10 +354,12 @@ import {
   unbanUserApi,
   resetPasswordApi,
   getReports,
+  getReportDetail,
   resolveReportApi,
   dismissReportApi,
   getAdminReviews,
   deleteReviewApi,
+  deleteCommentApi,
 } from "@/api/admin";
 import * as echarts from "echarts";
 
@@ -338,6 +489,113 @@ const fetchReviews = async () => {
 const deleteReview = async (row) => {
   await deleteReviewApi(row.id);
   fetchReviews();
+};
+
+// ===== 删除留言（新增） =====
+const handleDeleteComment = async (row) => {
+  try {
+    await ElMessageBox.confirm(
+      `确认删除该留言？被举报留言：${row.targetDetail?.content || "内容已加载"}。删除后不可恢复。`,
+      "删除留言",
+      {
+        type: "warning",
+        confirmButtonText: "确认删除",
+        cancelButtonText: "取消",
+      },
+    );
+  } catch {
+    return;
+  }
+  try {
+    await deleteCommentApi(row.targetId);
+    ElMessage.success("留言已删除");
+    // 同时将举报状态设为已处理
+    await resolveReportApi(row.id);
+    row.status = "resolved";
+    // 刷新举报列表
+    fetchReports();
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || "删除失败");
+  }
+};
+
+// ===== 管理员通过举报删除商品（新增） =====
+const handleDeleteProductByReport = async (row) => {
+  // 获取商品名称（用于确认弹窗显示）
+  let productTitle = "该商品";
+  try {
+    const { getProductDetail } = await import("@/api/product");
+    const res = await getProductDetail(row.targetId);
+    productTitle = res.data.product?.title || "该商品";
+  } catch {
+    // 如果获取失败，使用默认名称
+  }
+
+  try {
+    await ElMessageBox.confirm(
+      `确认删除被举报的商品「${productTitle}」？删除后不可恢复，举报将自动标记为已处理。`,
+      "删除商品",
+      { type: "warning", confirmButtonText: "确认删除", cancelButtonText: "取消" },
+    );
+  } catch {
+    return;
+  }
+
+  try {
+    // 1. 删除商品（复用已有的 deleteProduct API）
+    await deleteProduct(row.targetId);
+    // 2. 将举报状态设为已处理
+    await resolveReportApi(row.id);
+    // 3. 更新当前行状态
+    row.status = "resolved";
+    ElMessage.success("商品已删除，举报已处理");
+    // 4. 刷新举报列表
+    fetchReports();
+  } catch (e) {
+    ElMessage.error(e.response?.data?.message || "操作失败");
+  }
+};
+
+// ===== 详情弹窗（新增） =====
+const detailDialogVisible = ref(false);
+const detailDialogTitle = ref("");
+const detailLoading = ref(false);
+const detailData = ref(null);
+const detailType = ref("product"); // 'product' | 'report'
+
+// 查看商品详情
+const handleViewProduct = async (row) => {
+  detailType.value = "product";
+  detailDialogTitle.value = `商品详情 - ${row.title}`;
+  detailDialogVisible.value = true;
+  detailLoading.value = true;
+  try {
+    const { getProductDetail } = await import("@/api/product");
+    const res = await getProductDetail(row.id);
+    detailData.value = res.data.product;
+  } catch (e) {
+    ElMessage.error("加载商品详情失败");
+    detailData.value = row;
+  } finally {
+    detailLoading.value = false;
+  }
+};
+
+// 查看举报详情
+const handleViewReport = async (row) => {
+  detailType.value = "report";
+  detailDialogTitle.value = `举报详情 #${row.id}`;
+  detailDialogVisible.value = true;
+  detailLoading.value = true;
+  try {
+    const res = await getReportDetail(row.id);
+    detailData.value = res.data.report;
+  } catch (e) {
+    ElMessage.error("加载举报详情失败");
+    detailData.value = row;
+  } finally {
+    detailLoading.value = false;
+  }
 };
 
 onMounted(() => {

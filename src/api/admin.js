@@ -31,11 +31,17 @@ export const resetPasswordApi = (id) =>
 export const getReports = (page = 1) =>
   request.get("/admin/reports", { params: { page } });
 
+// 【模块五】获取单条举报详情
+export const getReportDetail = (id) => request.get(`/admin/reports/${id}`);
+
 export const resolveReportApi = (id) =>
   request.put(`/admin/reports/${id}`, { status: "resolved" });
 
 export const dismissReportApi = (id) =>
   request.put(`/admin/reports/${id}`, { status: "dismissed" });
+
+// 【模块五】管理员删除留言
+export const deleteCommentApi = (id) => request.delete(`/admin/comments/${id}`);
 
 // 【模块四】评价管理
 export const getAdminReviews = () => request.get("/admin/reviews");

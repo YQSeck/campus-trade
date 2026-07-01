@@ -67,6 +67,37 @@ function normalizeAccount(value) {
   return v;
 }
 
+// ========== 模块六：开放 API 第三方鉴权 ==========
+const PUBLIC_API_KEY = 'campus-trade-2026-public';
+
+function apiKeyMiddleware(req, res, next) {
+  // 只对 GET 请求进行第三方 API Key 校验，POST/PUT/DELETE 由 JWT 接管
+  if (req.method !== 'GET') {
+    return next();
+  }
+
+  const apiKey = req.headers['x-api-key'] || req.query.api_key;
+  const origin = req.headers.origin;
+  const host = req.headers.host;
+
+  // 同源请求（前端页面）直接放行
+  if (origin && (origin.includes('localhost') || origin.includes('127.0.0.1') || origin.includes('::1') || origin.includes('5173') || origin.includes('3000'))) {
+    return next();
+  }
+
+  // 没有 origin 头时（如 Vite 代理转发），检查 host
+  if (host && (host.includes('localhost') || host.includes('127.0.0.1') || host.includes('::1'))) {
+    return next();
+  }
+
+  // 第三方跨域调用必须有合法的 API Key
+  if (apiKey === PUBLIC_API_KEY) {
+    return next();
+  }
+
+  return res.status(401).json({ message: '无效或缺失 API Key，请携带 x-api-key 头调用' });
+}
+
 module.exports = {
   JWT_SECRET,
   MAX_LOGIN_ATTEMPTS,
@@ -77,4 +108,5 @@ module.exports = {
   adminMiddleware,
   mockSendEmail,
   normalizeAccount,
+  apiKeyMiddleware,
 };

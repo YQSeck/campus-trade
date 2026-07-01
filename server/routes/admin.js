@@ -128,6 +128,29 @@ router.get('/reports', (req, res) => {
   res.json({ reports: items, total, page, limit });
 });
 
+router.get('/reports/:id', (req, res) => {
+  const reportId = parseInt(req.params.id);
+  const report = db.reports.find((r) => r.id === reportId);
+  if (!report) return res.status(404).json({ message: '举报不存在' });
+
+  let targetDetail = null;
+  if (report.targetType === 'product') {
+    targetDetail = db.products.find((p) => p.id === report.targetId);
+  } else if (report.targetType === 'comment') {
+    targetDetail = db.comments.find((c) => c.id === report.targetId);
+  }
+
+  const reporter = db.users.find((u) => u.id === report.reporterId);
+
+  res.json({
+    report: {
+      ...report,
+      reporterNickname: reporter ? reporter.nickname : '未知',
+      targetDetail,
+    },
+  });
+});
+
 router.put('/reports/:id', (req, res) => {
   const reportId = parseInt(req.params.id);
   const { status } = req.body;
@@ -138,6 +161,22 @@ router.put('/reports/:id', (req, res) => {
   }
   report.status = status;
   res.json({ message: '处理成功', report });
+});
+
+router.delete('/comments/:id', (req, res) => {
+  const commentId = parseInt(req.params.id);
+  const idx = db.comments.findIndex((c) => c.id === commentId);
+  if (idx === -1) return res.status(404).json({ message: '留言不存在' });
+
+  db.comments.splice(idx, 1);
+
+  const replies = db.comments.filter((c) => c.parentId === commentId);
+  replies.forEach((r) => {
+    const replyIdx = db.comments.findIndex((c) => c.id === r.id);
+    if (replyIdx !== -1) db.comments.splice(replyIdx, 1);
+  });
+
+  res.json({ message: '留言已删除', deletedCount: 1 + replies.length });
 });
 
 router.get('/reviews', (req, res) => {

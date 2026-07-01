@@ -150,7 +150,7 @@ const db = {
       createdAt: '2026-06-20T10:00:00.000Z',
     },
   ],
-  // 模块三：交易与订单
+  // 模块三：交易与订单 — 修改：日期改为近7天内
   orders: [
     {
       id: 1,
@@ -160,7 +160,7 @@ const db = {
       productTitle: '高等数学教材第七版',
       price: 25,
       status: 'received',
-      createdAt: '2026-06-26T08:00:00.000Z',
+      createdAt: '2026-07-01T08:00:00.000Z',  // 修改
     },
     {
       id: 2,
@@ -170,7 +170,7 @@ const db = {
       productTitle: '机械键盘 Keychron K2',
       price: 150,
       status: 'shipped',
-      createdAt: '2026-06-25T15:00:00.000Z',
+      createdAt: '2026-06-30T15:00:00.000Z',  // 修改
     },
     {
       id: 3,
@@ -180,7 +180,7 @@ const db = {
       productTitle: 'LED 台灯',
       price: 15,
       status: 'received',
-      createdAt: '2026-06-24T12:00:00.000Z',
+      createdAt: '2026-06-28T12:00:00.000Z',  // 修改
     },
     {
       id: 4,
@@ -190,7 +190,7 @@ const db = {
       productTitle: 'iPad Air 4 64G',
       price: 2000,
       status: 'cancelled',
-      createdAt: '2026-06-23T10:00:00.000Z',
+      createdAt: '2026-06-28T10:00:00.000Z',  // 修改
     },
   ],
   // 模块三：交易与订单（商品留言）
@@ -202,7 +202,7 @@ const db = {
       userNickname: '李四',
       content: '还在吗？',
       parentId: null,
-      createdAt: '2026-06-21T10:30:00.000Z',
+      createdAt: '2026-06-26T10:30:00.000Z',
     },
     {
       id: 2,
@@ -211,7 +211,7 @@ const db = {
       userNickname: '张三',
       content: '在的，可以面交',
       parentId: 1,
-      createdAt: '2026-06-21T11:00:00.000Z',
+      createdAt: '2026-06-25T11:00:00.000Z',
     },
   ],
   // 模块四：评价与信誉体系
@@ -225,7 +225,7 @@ const db = {
       reason: '疑似假货',
       reporterId: 3,
       status: 'pending',
-      createdAt: '2026-06-24T09:00:00.000Z',
+      createdAt: '2026-06-30T09:00:00.000Z',
     },
   ],
   nextId: {
