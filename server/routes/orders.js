@@ -20,7 +20,6 @@ router.post('/', authMiddleware, (req, res) => {
   const product = db.products.find((p) => p.id === productId && p.status === 'active');
   if (!product) return res.status(404).json({ message: '商品不存在或已下架' });
   if (product.sellerId === buyerId) return res.status(400).json({ message: '不能购买自己的商品' });
-  if (req.user.role === 'admin') return res.status(403).json({ message: '管理员不能购买商品' });
 
   const order = {
     id: genId('order'),

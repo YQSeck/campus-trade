@@ -1,6 +1,6 @@
 // 【模块七：CLI】订单报表导出命令
 // AI 生成：手动调整前请勿修改
-// AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
+// AI 
 const chalk = require('chalk');
 const fs = require('fs');
 const path = require('path');
@@ -8,10 +8,10 @@ const apiClient = require('../apiClient');
 
 function register(cmd) {
   cmd.command('export')
-    .description('瀵煎嚭璁㈠崟鎶ヨ〃锛堥渶绠＄悊鍛?Token锛?)
-    .option('-f, --format <format>', '瀵煎嚭鏍煎紡锛歝sv 鎴?json锛堥粯璁?csv锛?, 'csv')
-    .option('-o, --output <file>', '杈撳嚭鏂囦欢璺緞锛堥粯璁?orders_export.csv锛?, 'orders_export.csv')
-    .option('-s, --status <status>', '鎸夌姸鎬佺瓫閫夛紙pending/shipped/completed/cancelled锛?)
+    .description('导出订单报表（需管理员 Token）')
+    .option('-f, --format <format>', '导出格式：csv 或 json（默认 csv）', 'csv')
+    .option('-o, --output <file>', '输出文件路径（默认 orders_export.csv）', 'orders_export.csv')
+    .option('-s, --status <status>', '按状态筛选（pending/shipped/completed/cancelled）')
     .action(function(opts) {
       var params = { page: 1, limit: 100 };
       if (opts.status) params.status = opts.status;
@@ -20,7 +20,7 @@ function register(cmd) {
         .then(function(res) {
           var orders = res.data.orders;
           if (orders.length === 0) {
-            console.log(chalk.yellow('娌℃湁绗﹀悎鏉′欢鐨勮鍗?));
+            console.log(chalk.yellow('没有符合条件的订单'));
             return;
           }
 
@@ -35,21 +35,22 @@ function register(cmd) {
           }
 
           fs.writeFileSync(outputPath, content, 'utf8');
-          console.log(chalk.green('鉁?鎶ヨ〃宸插鍑? ' + outputPath));
-          console.log(chalk.gray('  鍏?' + orders.length + ' 鏉¤鍗?));
+          console.log(chalk.green('✔ 报表已导出: ' + outputPath));
+          console.log(chalk.gray('  共 ' + orders.length + ' 条订单'));
 
-          // 绠€鍗曠粺璁℃憳瑕?          var statusCount = {};
+          // 简单统计摘要
+          var statusCount = {};
           var totalAmount = 0;
           orders.forEach(function(o) {
             statusCount[o.status] = (statusCount[o.status] || 0) + 1;
             totalAmount += o.price;
           });
-          console.log(chalk.bold('\n鎽樿'));
+          console.log(chalk.bold('\n摘要'));
           Object.keys(statusCount).forEach(function(s) {
-            var label = { pending: '寰呬粯娆?, shipped: '寰呮敹璐?, completed: '宸插畬鎴?, cancelled: '宸插彇娑? }[s] || s;
-            console.log('  ' + label + ': ' + statusCount[s] + ' 绗?);
+            var label = { pending: '待付款', shipped: '待收货', completed: '已完成', cancelled: '已取消' }[s] || s;
+            console.log('  ' + label + ': ' + statusCount[s] + ' 笔');
           });
-          console.log('  ' + '浜ゆ槗鎬婚: 楼' + totalAmount.toFixed(2) + '\n');
+          console.log('  ' + '交易总额: 楼' + totalAmount.toFixed(2) + '\n');
         })
         .catch(function(err) {
           handleError(err);
@@ -58,9 +59,9 @@ function register(cmd) {
 }
 
 function ordersToCsv(orders) {
-  var headers = ['璁㈠崟ID', '鍟嗗搧鍚嶇О', '鍟嗗搧绫荤洰', '涔板', '鍗栧', '鐘舵€?, '閲戦', '鍒涘缓鏃堕棿'];
+  var headers = ['订单ID', '商品名称', '商品类目', '买家', '卖家', '状态', '金额', '创建时间'];
   var rows = orders.map(function(o) {
-    var statusLabel = { pending: '寰呬粯娆?, shipped: '寰呮敹璐?, completed: '宸插畬鎴?, cancelled: '宸插彇娑? }[o.status] || o.status;
+    var statusLabel = { pending: '待付款', shipped: '待收货', completed: '已完成', cancelled: '已取消' }[o.status] || o.status;
     return [
       o.id,
       escapeCsv(o.productTitle),
@@ -73,7 +74,7 @@ function ordersToCsv(orders) {
     ].join(',');
   });
   var csv = headers.join(',') + '\n' + rows.join('\n');
-  // 娣诲姞 BOM 浣?Excel 姝ｇ‘璇嗗埆 UTF-8 涓枃
+  // 添加 BOM 使 Excel 正确识别 UTF-8 中文
   return '\uFEFF' + csv;
 }
 
@@ -87,11 +88,11 @@ function escapeCsv(str) {
 
 function handleError(err) {
   if (err.response) {
-    console.error(chalk.red('閿欒 [' + err.response.status + ']: ' + (err.response.data.message || '')));
+    console.error(chalk.red('错误 [' + err.response.status + ']: ' + (err.response.data.message || '')));
   } else if (err.code === 'ECONNREFUSED') {
-    console.error(chalk.red('鏃犳硶杩炴帴鍒板悗绔湇鍔″櫒銆傝纭 server.js 宸插惎鍔細npm run server'));
+    console.error(chalk.red('无法连接到后端服务器。请确认 server.js 已启动：npm run server'));
   } else {
-    console.error(chalk.red('閿欒: ' + err.message));
+    console.error(chalk.red('错误: ' + err.message));
   }
   process.exit(1);
 }

@@ -1,6 +1,5 @@
 // 【模块八：开放 Skill】定价 API 测试
 // AI 生成：手动调整前请勿修改
-// AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
 var { describe, it, before, after } = require('node:test');
 var assert = require('node:assert/strict');
 var http = require('http');
@@ -58,10 +57,10 @@ function request(method, path, body) {
 }
 
 describe('pricingApi - POST /api/skills/recommend', function() {
-  it('鏈夋晥杈撳叆(鍥涘弬鏁?杩斿洖 200 + success:true', async function() {
+  it('有效输入(四参数)返回 200 + success:true', async function() {
     var res = await request('POST', '/skills/recommend', {
-      category: '鐢靛瓙浜у搧',
-      condition: '杞诲井浣跨敤',
+      category: '电子产品',
+      condition: '轻微使用',
       originalPrice: 4399,
       marketPrices: [1800, 2100, 1950, 2200]
     });
@@ -71,37 +70,37 @@ describe('pricingApi - POST /api/skills/recommend', function() {
     assert.strictEqual(res.body.confidence, 0.85);
   });
 
-  it('浠呮湁鍒嗙被+鎴愯壊杩斿洖 200 + success:true', async function() {
+  it('仅有分类+成色返回 200 + success:true', async function() {
     var res = await request('POST', '/skills/recommend', {
-      category: '涔︾睄',
-      condition: '鍑犱箮鍏ㄦ柊'
+      category: '书籍',
+      condition: '几乎全新'
     });
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, true);
     assert.ok(res.body.suggestedPrice > 0);
   });
 
-  it('鏃犳晥鍒嗙被杩斿洖 success:false', async function() {
+  it('无效分类返回 success:false', async function() {
     var res = await request('POST', '/skills/recommend', {
-      category: '姹借溅',
-      condition: '鍑犱箮鍏ㄦ柊'
+      category: '汽车',
+      condition: '几乎全新'
     });
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, false);
-    assert.ok(res.body.error.indexOf('鏃犳晥鍒嗙被') !== -1);
+    assert.ok(res.body.error.indexOf('无效分类') !== -1);
   });
 
-  it('鏃犳晥鎴愯壊杩斿洖 success:false', async function() {
+  it('无效成色返回 success:false', async function() {
     var res = await request('POST', '/skills/recommend', {
-      category: '涔︾睄',
-      condition: '鐮寸儌'
+      category: '书籍',
+      condition: '破烂'
     });
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, false);
-    assert.ok(res.body.error.indexOf('鏃犳晥鎴愯壊') !== -1);
+    assert.ok(res.body.error.indexOf('无效成色') !== -1);
   });
 
-  it('绌?body 杩斿洖 success:false', async function() {
+  it('空 body 返回 success:false', async function() {
     var res = await request('POST', '/skills/recommend', {});
     assert.strictEqual(res.status, 200);
     assert.strictEqual(res.body.success, false);
@@ -109,29 +108,29 @@ describe('pricingApi - POST /api/skills/recommend', function() {
 });
 
 describe('pricingApi - GET /api/skills/recommend/meta', function() {
-  it('杩斿洖 categories 鍒楄〃', async function() {
+  it('返回 categories 列表', async function() {
     var res = await request('GET', '/skills/recommend/meta');
     assert.strictEqual(res.status, 200);
-    assert.deepStrictEqual(res.body.categories, ['涔︾睄', '鐢靛瓙浜у搧', '鐢熸椿鐢ㄥ搧', '琛ｇ墿', '鍏朵粬']);
+    assert.deepStrictEqual(res.body.categories, ['书籍', '电子产品', '生活用品', '衣物', '其他']);
   });
 
-  it('杩斿洖 conditions 鍒楄〃', async function() {
+  it('返回 conditions 列表', async function() {
     var res = await request('GET', '/skills/recommend/meta');
     assert.strictEqual(res.status, 200);
-    assert.deepStrictEqual(res.body.conditions, ['鍏ㄦ柊', '鍑犱箮鍏ㄦ柊', '杞诲井浣跨敤', '鏄庢樉浣跨敤', '鑰佹棫']);
+    assert.deepStrictEqual(res.body.conditions, ['全新', '几乎全新', '轻微使用', '明显使用', '老旧']);
   });
 
-  it('杩斿洖 baseRates 鍚纭姌鎵ｇ巼', async function() {
+  it('返回 baseRates 含正确折扣率', async function() {
     var res = await request('GET', '/skills/recommend/meta');
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.body.baseRates['涔︾睄'], 0.45);
-    assert.strictEqual(res.body.baseRates['鐢靛瓙浜у搧'], 0.55);
+    assert.strictEqual(res.body.baseRates['书籍'], 0.45);
+    assert.strictEqual(res.body.baseRates['电子产品'], 0.55);
   });
 
-  it('杩斿洖 conditionFactors 鍚纭洜瀛?, async function() {
+  it('返回 conditionFactors 含正确因子', async function() {
     var res = await request('GET', '/skills/recommend/meta');
     assert.strictEqual(res.status, 200);
-    assert.strictEqual(res.body.conditionFactors['鍏ㄦ柊'], 0.95);
-    assert.strictEqual(res.body.conditionFactors['鑰佹棫'], 0.25);
+    assert.strictEqual(res.body.conditionFactors['全新'], 0.95);
+    assert.strictEqual(res.body.conditionFactors['老旧'], 0.25);
   });
 });

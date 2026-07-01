@@ -1,13 +1,13 @@
 // 【模块七：CLI】HTTP 客户端与 Token 管理
 // AI 生成：手动调整前请勿修改
-// AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
+// AI 
 const axios = require('axios');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
-// CLI 涓撶敤 HTTP 瀹㈡埛绔細鍔熻兘绛変环浜庢祻瑙堝櫒绔?@/utils/request.js
-// 鍖哄埆锛歵oken 浼樺厛浠庣幆澧冨彉閲?TRADE_TOKEN 璇诲彇锛屽叾娆′粠 ~/.trade-cli/config.json 璇诲彇
+// CLI 专用 HTTP 客户端：功能等价于浏览器端 @/utils/request.js
+// 区别：token 优先从环境变量 TRADE_TOKEN 读取，其次从 ~/.trade-cli/config.json 读取
 const BASE_URL = process.env.TRADE_API_URL || 'http://localhost:3000/api';
 
 function loadToken() {

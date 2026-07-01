@@ -1,20 +1,20 @@
 // 【模块七：CLI】用户封禁/解封命令
 // AI 生成：手动调整前请勿修改
-// AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
+// AI 
 const chalk = require('chalk');
 const apiClient = require('../apiClient');
 
 function register(cmd) {
   // trade-cli users ban <userId>
   cmd.command('ban <userId>')
-    .description('灏佺鐢ㄦ埛锛堥渶绠＄悊鍛?Token锛?)
-    .option('-r, --reason <reason>', '灏佺鍘熷洜')
+    .description('封禁用户（需管理员 Token）')
+    .option('-r, --reason <reason>', '封禁原因')
     .action(function(userId, opts) {
-      apiClient.put('/users/' + userId + '/ban', { reason: opts.reason || '绠＄悊鍛樻搷浣? })
+      apiClient.put('/users/' + userId + '/ban', { reason: opts.reason || '管理员操作' })
         .then(function(res) {
-          console.log(chalk.green('鉁?' + res.data.message));
-          console.log('  鐢ㄦ埛ID: ' + res.data.userId);
-          console.log('  鐢ㄦ埛鍚? ' + res.data.nickname);
+          console.log(chalk.green('✔ ' + res.data.message));
+          console.log('  用户ID: ' + res.data.userId);
+          console.log('  用户名: ' + res.data.nickname);
         })
         .catch(function(err) {
           handleError(err);
@@ -23,13 +23,13 @@ function register(cmd) {
 
   // trade-cli users unban <userId>
   cmd.command('unban <userId>')
-    .description('瑙ｅ皝鐢ㄦ埛锛堥渶绠＄悊鍛?Token锛?)
+    .description('解封用户（需管理员 Token）')
     .action(function(userId) {
       apiClient.put('/users/' + userId + '/unban')
         .then(function(res) {
-          console.log(chalk.green('鉁?' + res.data.message));
-          console.log('  鐢ㄦ埛ID: ' + res.data.userId);
-          console.log('  鐢ㄦ埛鍚? ' + res.data.nickname);
+          console.log(chalk.green('✔ ' + res.data.message));
+          console.log('  用户ID: ' + res.data.userId);
+          console.log('  用户名: ' + res.data.nickname);
         })
         .catch(function(err) {
           handleError(err);
@@ -39,11 +39,11 @@ function register(cmd) {
 
 function handleError(err) {
   if (err.response) {
-    console.error(chalk.red('閿欒 [' + err.response.status + ']: ' + (err.response.data.message || '')));
+    console.error(chalk.red('错误 [' + err.response.status + ']: ' + (err.response.data.message || '')));
   } else if (err.code === 'ECONNREFUSED') {
-    console.error(chalk.red('鏃犳硶杩炴帴鍒板悗绔湇鍔″櫒銆傝纭 server.js 宸插惎鍔細npm run server'));
+    console.error(chalk.red('无法连接到后端服务器。请确认 server.js 已启动：npm run server'));
   } else {
-    console.error(chalk.red('閿欒: ' + err.message));
+    console.error(chalk.red('错误: ' + err.message));
   }
   process.exit(1);
 }

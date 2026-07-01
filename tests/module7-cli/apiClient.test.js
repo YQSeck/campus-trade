@@ -1,14 +1,13 @@
 // 【模块七：CLI】apiClient 单元测试
 // AI 生成：手动调整前请勿修改
-// AI 鐢熸垚锛氭墜鍔ㄨ皟鏁村墠璇峰嬁淇敼
 var { describe, it, before, after, beforeEach } = require('node:test');
 var assert = require('node:assert/strict');
 var fs = require('fs');
 var path = require('path');
 var os = require('os');
 
-// apiClient 鍦?require 鏃朵細璇诲彇 TRADE_TOKEN 鍜?config 鏂囦欢
-// 娴嬭瘯闇€瑕侀殧绂荤幆澧?
+// apiClient 在 require 时会读取 TRADE_TOKEN 和 config 文件
+// 测试需要隔离环境
 var originalToken = process.env.TRADE_TOKEN;
 var originalApiUrl = process.env.TRADE_API_URL;
 var configFile = path.join(os.homedir(), '.trade-cli', 'config.json');
@@ -39,14 +38,14 @@ after(function() {
 });
 
 describe('apiClient - baseURL', function() {
-  it('榛樿 baseURL 涓?http://localhost:3000/api', function() {
+  it('默认 baseURL 为 http://localhost:3000/api', function() {
     delete process.env.TRADE_API_URL;
     var client = require('../../cli/apiClient');
     assert.strictEqual(client.defaults.baseURL, 'http://localhost:3000/api');
     delete require.cache[require.resolve('../../cli/apiClient')];
   });
 
-  it('閫氳繃 TRADE_API_URL 鐜鍙橀噺鍙鐩?baseURL', function() {
+  it('通过 TRADE_API_URL 环境变量可覆盖 baseURL', function() {
     process.env.TRADE_API_URL = 'http://custom:8080/api';
     delete require.cache[require.resolve('../../cli/apiClient')];
     var client = require('../../cli/apiClient');
@@ -56,8 +55,8 @@ describe('apiClient - baseURL', function() {
   });
 });
 
-describe('apiClient - token 鍔犺浇', function() {
-  it('浠?TRADE_TOKEN 鐜鍙橀噺鍔犺浇 token', function() {
+describe('apiClient - token 加载', function() {
+  it('从 TRADE_TOKEN 环境变量加载 token', function() {
     delete require.cache[require.resolve('../../cli/apiClient')];
     process.env.TRADE_TOKEN = 'test-env-jwt-token';
     var client = require('../../cli/apiClient');
@@ -68,12 +67,12 @@ describe('apiClient - token 鍔犺浇', function() {
     delete require.cache[require.resolve('../../cli/apiClient')];
   });
 
-  it('绌?token 涓嶉檮鍔?Authorization 澶?, function() {
+  it('空 token 不附加 Authorization 头', function() {
     delete process.env.TRADE_TOKEN;
     process.env.TRADE_TOKEN = '';
     delete require.cache[require.resolve('../../cli/apiClient')];
     var client = require('../../cli/apiClient');
-    client.setToken = function() {}; // 閬垮厤鍐欏叆鏂囦欢
+    client.setToken = function() {}; // 避免写入文件
     var testConfig = { headers: {} };
     var result = client.interceptors.request.handlers[0].fulfilled(testConfig);
     assert.strictEqual(result.headers.Authorization, undefined);
@@ -83,7 +82,7 @@ describe('apiClient - token 鍔犺浇', function() {
 });
 
 describe('apiClient - setToken', function() {
-  it('setToken 鍚庤姹傚ご鍖呭惈鏂?token', function() {
+  it('setToken 后请求头包含新 token', function() {
     delete process.env.TRADE_TOKEN;
     delete require.cache[require.resolve('../../cli/apiClient')];
     var client = require('../../cli/apiClient');
@@ -95,8 +94,8 @@ describe('apiClient - setToken', function() {
   });
 });
 
-describe('apiClient - 瓒呮椂閰嶇疆', function() {
-  it('榛樿瓒呮椂涓?15000ms', function() {
+describe('apiClient - 超时配置', function() {
+  it('默认超时为 15000ms', function() {
     delete process.env.TRADE_TOKEN;
     delete require.cache[require.resolve('../../cli/apiClient')];
     var client = require('../../cli/apiClient');
